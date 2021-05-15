@@ -3,6 +3,8 @@ flask
 # testing
 pytest
 requests
+elasticsearch
+psycopg2-binary # or just psycopg2 will do depending on your configuration
 
 # production
 uwsgi
