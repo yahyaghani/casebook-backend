@@ -1,5 +1,0 @@
-1) first download postgreql through brew
-2) start postgreql with: brew services start postgresql
-3) restart postgresql with: brew services restart postgresql
-4) to access it in terminal run run psql postgres
-5) \q to quit the terminal process
