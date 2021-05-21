@@ -25,6 +25,13 @@ def get_json_data():
     return jsonify(output)
 
 
+@bp_api.route('/newjson', methods=['GET'])
+def get_newjson_data():
+    """ get json data """
+    output = json_data()
+    return jsonify(output)
+
+
 @bp_api.route('/search', methods=['GET'])
 def get_search_data():
     """ get search """
