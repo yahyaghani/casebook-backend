@@ -1,9 +1,6 @@
 from flask import Blueprint, jsonify, request
-from src.endpoints.data import json_data
-from src.endpoints.data import graph_data
-from src.endpoints.data import search_data
+from endpoints.data import json_data, graph_data, search_data
 from elasticsearch import Elasticsearch
-from flask import make_response
 from flask import send_file
 import json
 import os
