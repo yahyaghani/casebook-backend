@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from src.endpoints.routes.blueprint_api import bp_api
+from src.routes.blueprint_api import bp_api
 from flask_socketio import SocketIO, emit
 from engineio.payload import Payload
 from flask_cors import CORS
