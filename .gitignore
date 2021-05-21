@@ -1,0 +1,11 @@
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+Scripts
+Lib
+data
+pyvenv.cfg
+.vscode
