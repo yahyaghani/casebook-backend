@@ -92,7 +92,7 @@ def login_user():
     print(auth)
     if not auth or not auth.username or not auth.password:
         return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
-    user = UserModel.query.filter_by(name=auth.username).first()
+    user = UserModel.query.filter_by(username=auth.username).first()
     print(user)
 
     if not user:
