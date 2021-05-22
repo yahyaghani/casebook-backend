@@ -6,7 +6,7 @@ from .routes.pdf_api import bp_api
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
 from engineio.payload import Payload
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from .utils import check_password_and_generate_hash, check_password
 from datetime import timedelta, datetime
 import json
@@ -18,8 +18,10 @@ from functools import wraps
 Payload.max_decode_packets = 50
 ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
 app = Flask(__name__)
+app.config['CORS_HEADERS'] = 'Content-Type'
+cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
-UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/uploads/', '')
+UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/uploads')
 app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -28,7 +30,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db = SQLAlchemy(app)
 socketio = SocketIO(app, ping_interval=2000,
                     ping_timeout=5000)
-CORS(app)
 
 
 # all the models
@@ -71,9 +72,11 @@ def token_required(f):
 
 
 @app.route('/api/user/register', methods=['POST'])
+@cross_origin(origin='localhost', headers=['Content-Type', 'application/json'])
 def register_user():
-
-    data = request.get_json()
+    temp_data = request.data
+    data = json.loads(temp_data)
+    print(data)
     users = UserModel.query.all()
     for user in users:
         if user.email == data['email']:
@@ -93,7 +96,8 @@ def register_user():
     return jsonify(data)
 
 
-@app.route('/api/user/login')
+@app.route('/api/user/login', methods=['GET'])
+@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
 def login_user():
     auth = request.authorization
     print(auth)
@@ -132,7 +136,8 @@ def upload_file(currentuser):
         resp.status_code = 400
         return resp
     if file and allowed_file(file.filename):
-        dir = os.path.join(UPLOAD_FOLDER, currentuser.public_id)
+        dir = os.path.join(os.path.dirname(__file__) +
+                           '/uploads/', currentuser.public_id)
         if os.path.isdir(dir):
             print("doesnt exist")
         else:
