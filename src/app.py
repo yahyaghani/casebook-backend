@@ -19,15 +19,15 @@ Payload.max_decode_packets = 50
 ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
 app = Flask(__name__)
 
+UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/uploads/', '')
 app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
-app.config['UPLOAD_FOLDER'] = os.path.join(
-    f'{os.path.dirname(__file__)}/uploads/', '')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 db = SQLAlchemy(app)
 socketio = SocketIO(app, ping_interval=2000,
-                    ping_timeout=5000, cors_allowed_origins="*")
+                    ping_timeout=5000)
 CORS(app)
 
 
@@ -72,6 +72,7 @@ def token_required(f):
 
 @app.route('/api/user/register', methods=['POST'])
 def register_user():
+
     data = request.get_json()
     users = UserModel.query.all()
     for user in users:
@@ -120,6 +121,7 @@ def allowed_file(filename):
 @app.route('/upload/file', methods=['POST'])
 @token_required
 def upload_file(currentuser):
+    global UPLOAD_FOLDER
     if 'file' not in request.files:
         resp = jsonify({'message': 'No file part in the request'})
         resp.status_code = 400
@@ -130,8 +132,15 @@ def upload_file(currentuser):
         resp.status_code = 400
         return resp
     if file and allowed_file(file.filename):
+        dir = os.path.join(UPLOAD_FOLDER, currentuser.public_id)
+        if os.path.isdir(dir):
+            print("doesnt exist")
+        else:
+            os.mkdir(dir)
+            UPLOAD_FOLDER = dir
+
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        file.save(os.path.join(dir, filename))
         resp = jsonify({'message': 'File successfully uploaded'})
         resp.status_code = 201
         return resp
