@@ -1,13 +1,11 @@
 from flask import Blueprint, jsonify, request
 from src.endpoints.data import json_data, graph_data, search_data
-from elasticsearch import Elasticsearch
 from flask import send_file
 import json
 import os
 
 
-es = Elasticsearch()
-bp_api = Blueprint(name="blueprint_api", import_name=__name__)
+bp_api = Blueprint(name="pdf_api", import_name=__name__)
 
 
 @bp_api.route('/graph', methods=['GET', 'OPTION'])
