@@ -1,0 +1,56 @@
+--------------------------------
+Regarding the file:
+
+The vass-master file is a program written in python. The master runs game.py.The gui is the previously abandoned ui interface
+
+Robot Games.pdf is the topic of the program. The program I made is not the same as the topic. I need a writer to enrich my program. Many functions can actually be created out of thin air.
+
+Proposal.pdf was written by a previous writer,The content is off the topic, so don’t need to know too much
+
+Feedback file is about the above proposal
+
+NPR_revision.pdf is a thesis written by my supervisor, so you only need to understand it briefly. What I need is a report on my rudimentary software
+
+Report.md is written by the previous handwriting, a brief description of the program
+
+The Others folder contains the speech scripts and ppts I have used before, which were also made by previous writers. There are some descriptions about the program in ppt.
+
+The website is the official website of school 390. it describes the details of the structure and content of the article. Be sure to read
+
+----------------------------------
+
+Assignment: software development report (6000-9000 words, Depends on time);  deadline: 19:00 on May 24th in London time;
+
+Job details: I need to write a report on the code. The article structure is divided into:
+
+.Anonymous Title Page
+.Abstract, Table of Contents and optional Table of Figures
+.Introduction, Aims & Objectives, Background
+.Design and Implementation Chapters (Main Body)
+.Testing & Evaluation
+.Conclusion
+.BCS Criteria & Self-Reflection
+.References
+.Appendices
+
+The specific content details of each part can be viewed in the  folder in the offline website.
+
+tips: You can write some functions that the program does not have, as long as you can run it in the test and give the corresponding screenshots.
+----------------------------------
+A brief overview of the procedure:
+
+This is a two-player vector game. The two players act as the attacker Eva (player 1) and the defender Adam (player 2). The purpose of the attacker eva is to move the robot to the origin (0,0), and the purpose of the defender Adam is to prevent the robot from reaching (0,0) within a limited round.
+
+Initially, you need to set the number of rounds, a robot's initial vector x (not the origin), and a set of two integer vectors (U{} and V{}).The setting of U{} and V{} here is a difficult point, which greatly affects the victory of the game. The random setting in my program is wrong. It is also important to limit the size of the game map, which will affect the victory of the game.
+
+At the beginning of the round, player 2 selects a vector v from V, then player 1 selects a vector u from U, and then adds the two selected vectors to x to get the new position xi of the robot (robot   xi=x+v+u ).Then games run until the robot reaches (0, 0) or the number of rounds is exhausted.
+
+
+Difficulties of the program:
+1. we need to write a method to initialize the sets U and V to ensure that the attacker eva can reach the origin (0,0) within a limited round.
+In the initial setting, a set of vectors are added to U{} and V{} respectively, The sum of these vectors is added to the initial x as (0,0).
+In other words, the program knows an attacker's winning strategy from the beginning.
+2. I want to make a interface that can display the coordinate axis and the position of the robot.
+3. If possible, I hope the writer can design an AI that allows players to play on a single machine.
+---------------------------------
+For other details not mentioned above, I will tell you if I know. As for things that I don’t understand, I will ask my supervisor

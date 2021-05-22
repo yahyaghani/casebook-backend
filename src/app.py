@@ -1,6 +1,7 @@
 from time import time
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, url_for, flash
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 from .routes.pdf_api import bp_api
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
@@ -15,9 +16,14 @@ import jwt
 from functools import wraps
 
 Payload.max_decode_packets = 50
+ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
 app = Flask(__name__)
+
 app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
+app.config['UPLOAD_FOLDER'] = os.path.join(
+    f'{os.path.dirname(__file__)}/uploads/', '')
+
 
 db = SQLAlchemy(app)
 socketio = SocketIO(app, ping_interval=2000,
@@ -105,6 +111,35 @@ def login_user():
         return jsonify({'auth_token': token.decode('UTF-8')})
 
     return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/upload/file', methods=['POST'])
+@token_required
+def upload_file(currentuser):
+    if 'file' not in request.files:
+        resp = jsonify({'message': 'No file part in the request'})
+        resp.status_code = 400
+        return resp
+    file = request.files['file']
+    if file.filename == '':
+        resp = jsonify({'message': 'No file selected for uploading'})
+        resp.status_code = 400
+        return resp
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        resp = jsonify({'message': 'File successfully uploaded'})
+        resp.status_code = 201
+        return resp
+    else:
+        resp = jsonify(
+            {'message': 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
+        resp.status_code = 400
+        return resp
 
 
 @socketio.on('connect')
