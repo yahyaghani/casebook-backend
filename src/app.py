@@ -28,8 +28,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, ping_interval=2000,
-                    ping_timeout=5000)
+socketio = SocketIO(app, ping_interval=2000, ping_timeout=5000)
 
 
 # all the models
@@ -47,6 +46,7 @@ class UserModel(db.Model):
 
 # custom decorators
 
+db.create_all()
 
 def token_required(f):
     @wraps(f)
@@ -72,48 +72,58 @@ def token_required(f):
 
 
 @app.route('/api/user/register', methods=['POST'])
-@cross_origin(origin='localhost', headers=['Content-Type', 'application/json'])
+@cross_origin(origin="localhost", headers=['Content-Type', 'application/json'])
 def register_user():
     temp_data = request.data
     data = json.loads(temp_data)
     print(data)
-    users = UserModel.query.all()
-    for user in users:
-        if user.email == data['email']:
-            return jsonify({'message': 'email already exists'}), 404
-        if user.username == data['username']:
-            return jsonify({'message': 'username already exists'}), 404
+    try:
+        users = UserModel.query.all()
+        for user in users:
+            if user.email == data['email']:
+                return jsonify({'message': 'email already exists'}), 404
+            if user.username == data['username']:
+                return jsonify({'message': 'username already exists'}), 404
+        hashed_data = check_password_and_generate_hash(
+            data['password1'], data['password2'])
 
-    hashed_data = check_password_and_generate_hash(
-        data['password1'], data['password2'])
+        if hashed_data:
+            newuser = UserModel(public_id=str(uuid.uuid4(
+            )), username=data["username"], email=data["email"], password=hashed_data, admin=False)
+            db.session.add(newuser)
+            db.session.commit()
+            return jsonify({"message": f"account created welcome {newuser.username} "})
+        return jsonify(data)
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
 
-    if hashed_data:
-        newuser = UserModel(public_id=str(uuid.uuid4(
-        )), username=data["username"], email=data["email"], password=hashed_data, admin=False)
-        db.session.add(newuser)
-        db.session.commit()
-        return jsonify({"message": f"account created welcome {newuser.username} "})
-    return jsonify(data)
 
-
-@app.route('/api/user/login', methods=['GET'])
+@app.route('/api/user/login', methods=['POST'])
 @cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
 def login_user():
-    auth = request.authorization
-    print(auth)
-    if not auth or not auth.username or not auth.password:
-        return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
-    user = UserModel.query.filter_by(username=auth.username).first()
-    print(user)
+    try:
+        auth = request.data
+        auth = json.loads(auth)
+        print(auth)
+        if not auth or not auth['username'] or not auth['password']:
+            return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
+        user = UserModel.query.filter_by(username=auth['username']).first()
+        print(user)
 
-    if not user:
-        return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
+        if not user:
+            return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
 
-    if check_password_hash(user.password, auth.password):
-        token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
-        ) + timedelta(minutes=30)}, app.config['SECRET_KEY'])
+        if check_password_hash(user.password, auth['password']):
+            token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
+            ) + timedelta(minutes=30)}, app.config['SECRET_KEY'])
 
-        return jsonify({'auth_token': token.decode('UTF-8')})
+            return jsonify({'auth_token': token.decode('UTF-8'), 'userPublicId': user.public_id, 'username': user.username, 'email': user.email})
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
 
     return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
 
@@ -126,34 +136,41 @@ def allowed_file(filename):
 @token_required
 def upload_file(currentuser):
     global UPLOAD_FOLDER
-    if 'file' not in request.files:
-        resp = jsonify({'message': 'No file part in the request'})
-        resp.status_code = 400
-        return resp
-    file = request.files['file']
-    if file.filename == '':
-        resp = jsonify({'message': 'No file selected for uploading'})
-        resp.status_code = 400
-        return resp
-    if file and allowed_file(file.filename):
-        dir = os.path.join(os.path.dirname(__file__) +
-                           '/uploads/', currentuser.public_id)
-        if os.path.isdir(dir):
-            print("doesnt exist")
-        else:
-            os.mkdir(dir)
-            UPLOAD_FOLDER = dir
+    try:
+        if 'file' not in request.files:
+            print('No files found')
+            resp = jsonify({'message': 'No file part in the request'})
+            resp.status_code = 400
+            return resp
+        file = request.files['file']
+        if file.filename == '':
+            print('No filename selected')
+            resp = jsonify({'message': 'No file selected for uploading'})
+            resp.status_code = 400
+            return resp
+        if file and allowed_file(file.filename):
+            dir = os.path.join(os.path.dirname(__file__) +
+                            '/uploads/', currentuser.public_id)
+            if os.path.isdir(dir):
+                print("doesnt exist")
+            else:
+                os.makedirs(dir, exist_ok=True)
+                UPLOAD_FOLDER = dir
 
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(dir, filename))
-        resp = jsonify({'message': 'File successfully uploaded'})
-        resp.status_code = 201
-        return resp
-    else:
-        resp = jsonify(
-            {'message': 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
-        resp.status_code = 400
-        return resp
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(dir, filename))
+            resp = jsonify({'message': 'File successfully uploaded'})
+            resp.status_code = 201
+            return resp
+        else:
+            resp = jsonify(
+                {'message': 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
+            resp.status_code = 400
+            return resp
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
 
 
 @socketio.on('connect')
