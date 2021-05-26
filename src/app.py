@@ -1,5 +1,5 @@
 from time import time
-from flask import Flask, request, jsonify, make_response, url_for, flash
+from flask import Flask, request, jsonify, make_response, url_for, flash, send_file
 from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from .routes.pdf_api import bp_api
@@ -11,6 +11,8 @@ from .utils import check_password_and_generate_hash, check_password
 from datetime import timedelta, datetime
 import json
 import os
+from os import listdir
+from os.path import isfile, join
 import uuid
 import jwt
 from functools import wraps
@@ -28,7 +30,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, ping_interval=2000, ping_timeout=5000)
+socketio = SocketIO(app,  cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
 
 
 # all the models
@@ -173,35 +175,84 @@ def upload_file(currentuser):
         return make_response('Something went wrong!!', 500)
 
 
+@app.route('/get/files', methods=['GET'])
+@token_required
+def get_user_files(currentuser):
+    global UPLOAD_FOLDER
+    try:
+        dir = os.path.join(os.path.dirname(__file__) + '/uploads/', currentuser.public_id)
+        if os.path.isdir(dir) == False:
+            print('No files found')
+            resp = jsonify({'message': 'No files available for the user'})
+            resp.status_code = 400
+            return resp
+        else:
+            UPLOAD_FOLDER = dir
+            userFiles = [{ 'name': f, 'url': join('uploads', currentuser.public_id, f) } for f in listdir(dir) if isfile(join(dir, f))]
+            resp = jsonify({ 'files': userFiles })
+            resp.status_code = 201
+            return resp
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+
+@app.route('/uploads/<path:userPublicId>/<path:filename>', methods=['GET'])
+def get_user_pdf(userPublicId, filename):
+    """ get pdf file """
+    # retrieve body data from input JSON
+    print(userPublicId)
+    print(filename)
+    dir_path = join(os.path.dirname(__file__), 'uploads', userPublicId)
+    filePath = dir_path + '/{}'.format(filename)
+    print(filePath)
+    if os.path.isfile(filePath) == False:
+        print('No files found')
+        resp = jsonify({'message': 'File Not Found!!'})
+        resp.status_code = 404
+        return resp
+    return send_file(filePath, attachment_filename=filename)
+
+
 @socketio.on('connect')
 def test_connect():
     print('Connection is on!!')
 
     @socketio.on('get-document')
     def getDocumentId(documentId):
-        if os.path.isfile(documentId + '.json'):
-            print("\nFile exists\n")
-            with open(documentId + '.json') as json_file:
-                data = json.load(json_file)
-                emit('load-document', data)
-        else:
-            print('\nFile does not exist\n')
-            with open(documentId + '.json', 'w') as outfile:
-                json.dump({'data': {'ops': []}}, outfile)
-                emit('load-document', {'data': {'ops': []}})
+        try:
+            dir = os.path.join(os.path.dirname(__file__) + '/notes')
+            if os.path.isdir(dir) == False:
+                os.makedirs(dir, exist_ok=True)
+            filepath = dir + '/' + documentId + '.json'
+            if os.path.isfile(filepath):
+                print("\nFile exists\n")
+                with open(filepath) as json_file:
+                    data = json.load(json_file)
+                    emit('load-document', data)
+            else:
+                print('\nFile does not exist\n')
+                with open(filepath, 'w') as outfile:
+                    json.dump({'data': {'ops': []}}, outfile)
+                    emit('load-document', {'data': {'ops': []}})
 
-        @socketio.on('send-changes')
-        def sendChanges(delta):
-            emit('receive-changes', delta, broadcast=True, include_self=False)
+            @socketio.on('send-changes')
+            def sendChanges(delta):
+                emit('receive-changes', delta, broadcast=True, include_self=False)
 
-        @socketio.on('save-document')
-        def saveData(data):
-            with open(documentId + '.json', 'w') as outfile:
-                json.dump(data, outfile)
+            @socketio.on('save-document')
+            def saveData(data):
+                with open(filepath, 'w') as outfile:
+                    json.dump(data, outfile)
 
-        @socketio.on('disconnect')
-        def disconnect():
-            print('disconnected!')
+            @socketio.on('disconnect')
+            def disconnect():
+                print('disconnected!')
+        except Exception as err:
+            print('An exception occured!!')
+            print(err)
+            return 'Something went wrong!!'
 
 
 if __name__ == "__main__":

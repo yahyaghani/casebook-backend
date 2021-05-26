@@ -4,6 +4,7 @@
 __pycache__
 db.sqlite3
 uploads
+notes
 media
 Scripts
 Lib
