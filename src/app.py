@@ -153,9 +153,8 @@ def upload_file(currentuser):
         if file and allowed_file(file.filename):
             dir = os.path.join(os.path.dirname(__file__) +
                             '/uploads/', currentuser.public_id)
-            if os.path.isdir(dir):
+            if os.path.isdir(dir) == False:
                 print("doesnt exist")
-            else:
                 os.makedirs(dir, exist_ok=True)
                 UPLOAD_FOLDER = dir
 
@@ -178,7 +177,6 @@ def upload_file(currentuser):
 @app.route('/get/files', methods=['GET'])
 @token_required
 def get_user_files(currentuser):
-    global UPLOAD_FOLDER
     try:
         dir = os.path.join(os.path.dirname(__file__) + '/uploads/', currentuser.public_id)
         if os.path.isdir(dir) == False:
@@ -187,10 +185,55 @@ def get_user_files(currentuser):
             resp.status_code = 400
             return resp
         else:
-            UPLOAD_FOLDER = dir
             userFiles = [{ 'name': f, 'url': join('uploads', currentuser.public_id, f) } for f in listdir(dir) if isfile(join(dir, f))]
             resp = jsonify({ 'files': userFiles })
             resp.status_code = 201
+            return resp
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+@app.route('/save-highlights', methods=['POST'])
+@token_required
+def save_user_highlights(currentuser):
+    try:
+        highlights = request.data
+        highlights = json.loads(highlights)
+        dir = os.path.join(os.path.dirname(__file__) + '/highlights')
+        if os.path.isdir(dir) == False:
+            print("doesnt exist")
+            os.makedirs(dir, exist_ok=True)
+        if not highlights:
+            print('No Highlights found')
+            resp = jsonify({'message': 'No Highlights sent in request!'})
+            resp.status_code = 400
+            return resp
+        else:
+            filepath = join(dir, currentuser.public_id + '.json')
+            with open(filepath, 'w') as outfile:
+                json.dump(highlights, outfile)
+            resp = jsonify({ 'message': 'highlights saved successfully!' })
+            resp.status_code = 201
+            return resp
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+@app.route('/get-highlights', methods=['GET'])
+@token_required
+def get_user_highlights(currentuser):
+    try:
+        dir = os.path.join(os.path.dirname(__file__) + '/highlights')
+        if os.path.isdir(dir) == False:
+            print("doesnt exist")
+            os.makedirs(dir, exist_ok=True)
+        filepath = join(dir, currentuser.public_id + '.json')
+        with open(filepath) as json_file:
+            data = json.load(json_file)
+            resp = jsonify({ 'highlights': data })
+            resp.status_code = 200
             return resp
     except Exception as err:
         print('An exception occured!!')
