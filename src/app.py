@@ -26,7 +26,7 @@ from collections import Counter
 from typing import Pattern 
 import pandas as pd
 
-output_dir="/home/taymur/Documents/legal2/DATA/Judgements/judgclsfymodel8"
+output_dir="./judgclsfymodel8"
 nlp = spacy.load(output_dir)
 
 Payload.max_decode_packets = 50
