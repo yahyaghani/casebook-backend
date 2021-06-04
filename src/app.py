@@ -307,11 +307,13 @@ def get_user_pdf2(userPublicId, filename):
     
     isHighlightsAvailable = False
     data = []
-    with open(filepath, 'r') as json_file:
-        data = json.load(json_file)
-        for item in data:
-            if item['name'] == filename:
-                isHighlightsAvailable = True
+    if os.path.isfile(filepath):
+        print("\nFile exists\n")
+        with open(filepath, 'r') as json_file:
+            data = json.load(json_file)
+            for item in data:
+                if item['name'] == filename:
+                    isHighlightsAvailable = True
     
     if isHighlightsAvailable == True:
         print("Highlights already present for pdf: " + filename)
