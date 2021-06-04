@@ -298,7 +298,30 @@ def get_user_pdf2(userPublicId, filename):
         resp = jsonify({'message': 'File Not Found!!'})
         resp.status_code = 404
         return resp
+
+    dir = os.path.join(os.path.dirname(__file__) + '/highlights')
+    if os.path.isdir(dir) == False:
+        print("doesnt exist")
+        os.makedirs(dir, exist_ok=True)
+    filepath = join(dir, userPublicId + '.json')
     
+    isHighlightsAvailable = False
+    data = []
+    with open(filepath, 'r') as json_file:
+        data = json.load(json_file)
+        for item in data:
+            if item['name'] == filename:
+                isHighlightsAvailable = True
+    
+    if isHighlightsAvailable == True:
+        print("Highlights already present for pdf: " + filename)
+        response = app.response_class(
+                    response=json.dumps({ "highlights": data }),
+                    status=200,
+                    mimetype='application/json',
+                )
+        return response
+
     rsrcmgr = PDFResourceManager()
     laparams = LAParams()
     device = PDFPageAggregator(rsrcmgr, laparams=laparams)
@@ -356,26 +379,32 @@ def get_user_pdf2(userPublicId, filename):
                                     "y1": y1,
                                     "x2": x2,
                                     "y2": y2,
-                                }
-                            },
-                            "pageNumber": counter,
-                            "rects": [
-                                {
-                                    "height": 1200,
-                                    "width": 809.9999999999999,
-                                    "x1": x1,
-                                    "y1": y1,
-                                    "x2": x2,
-                                    "y2": y2,
-                                }
-                            ]
+                                },
+                                "pageNumber": counter,
+                                "rects": [
+                                    {
+                                        "height": 1200,
+                                        "width": 809.9999999999999,
+                                        "x1": x1,
+                                        "y1": y1,
+                                        "x2": x2,
+                                        "y2": y2,
+                                    }
+                                ]
+                            }
                         }
 
                         arr = proccessed_data.setdefault(filename, [])
                         arr.append(jsont)
-                
+    if filename in proccessed_data:
+        newFile = { "highlights": proccessed_data[filename], "name": filename }
+        data.append(newFile)
+
+    with open(filepath, 'w') as json_file:
+        json.dump(data, json_file)
+    
     response = app.response_class(
-                    response=json.dumps(proccessed_data, indent=4),
+                    response=json.dumps({ "highlights": data }),
                     status=200,
                     mimetype='application/json',
                 )
