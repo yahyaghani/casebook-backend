@@ -13,10 +13,8 @@ from collections import Counter
 from typing import Pattern 
 import pandas as pd
 
-output_dir="/home/taymur/Documents/legal2/DATA/Judgements/judgclsfymodel8"
+output_dir= os.path.dirname(os.path.realpath(__file__)) + "/../../judgclsfymodel8"
 nlp = spacy.load(output_dir)
-
-
 
 
 bp_api = Blueprint(name="pdf_api", import_name=__name__)

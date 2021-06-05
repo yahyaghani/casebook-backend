@@ -83,8 +83,6 @@ def token_required(f):
 
 
 # all the app configurations above
-
-
 @app.route('/api/user/register', methods=['POST'])
 @cross_origin(origin="localhost", headers=['Content-Type', 'application/json'])
 def register_user():
@@ -112,7 +110,6 @@ def register_user():
         print('An exception occured!!')
         print(err)
         return make_response('Something went wrong!!', 500)
-
 
 @app.route('/api/user/login', methods=['POST'])
 @cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
@@ -170,7 +167,8 @@ def upload_file(currentuser):
                 os.makedirs(dir, exist_ok=True)
                 UPLOAD_FOLDER = dir
 
-            filename = secure_filename(file.filename)
+            # filename = secure_filename(file.filename)
+            filename = file.filename
             file.save(os.path.join(dir, filename))
             resp = jsonify({'message': 'File successfully uploaded'})
             resp.status_code = 201
@@ -212,7 +210,7 @@ def save_user_highlights(currentuser):
     try:
         highlights = request.data
         highlights = json.loads(highlights)
-        dir = os.path.join(os.path.dirname(__file__) + '/highlights')
+        dir = os.path.join(os.path.dirname(__file__) + '/highlights/'+ currentuser.public_id)
         if os.path.isdir(dir) == False:
             print("doesnt exist")
             os.makedirs(dir, exist_ok=True)
@@ -222,9 +220,10 @@ def save_user_highlights(currentuser):
             resp.status_code = 400
             return resp
         else:
-            filepath = join(dir, currentuser.public_id + '.json')
-            with open(filepath, 'w') as outfile:
-                json.dump(highlights, outfile)
+            for fileHighlight in highlights:
+                filepath = join(dir, fileHighlight['name'] + '.json')
+                with open(filepath, 'w') as outfile:
+                    json.dump(fileHighlight, outfile)
             resp = jsonify({ 'message': 'highlights saved successfully!' })
             resp.status_code = 201
             return resp
@@ -237,16 +236,19 @@ def save_user_highlights(currentuser):
 @token_required
 def get_user_highlights(currentuser):
     try:
-        dir = os.path.join(os.path.dirname(__file__) + '/highlights')
+        dir = os.path.join(os.path.dirname(__file__) + '/highlights/' + currentuser.public_id )
         if os.path.isdir(dir) == False:
             print("doesnt exist")
             os.makedirs(dir, exist_ok=True)
-        filepath = join(dir, currentuser.public_id + '.json')
-        with open(filepath) as json_file:
-            data = json.load(json_file)
-            resp = jsonify({ 'highlights': data })
-            resp.status_code = 200
+            resp = jsonify({'message': 'No highlights available for the user'})
+            resp.status_code = 400
             return resp
+        
+        data = [json.load(open(join(dir, f))) for f in listdir(dir) if isfile(join(dir, f))]
+
+        resp = jsonify({ 'highlights': data })
+        resp.status_code = 200
+        return resp
     except Exception as err:
         print('An exception occured!!')
         print(err)
@@ -293,27 +295,27 @@ def get_user_pdf2(userPublicId, filename):
     dir_path = join(os.path.dirname(__file__), 'uploads', userPublicId)
     filePath = dir_path + '/{}'.format(filename)
     print(filePath)
+
     if os.path.isfile(filePath) == False:
         print('No files found')
         resp = jsonify({'message': 'File Not Found!!'})
         resp.status_code = 404
         return resp
 
-    dir = os.path.join(os.path.dirname(__file__) + '/highlights')
+    dir = os.path.join(os.path.dirname(__file__) + '/highlights/' + userPublicId)
     if os.path.isdir(dir) == False:
         print("doesnt exist")
         os.makedirs(dir, exist_ok=True)
-    filepath = join(dir, userPublicId + '.json')
+    filepath = join(dir, filename + '.json')
     
     isHighlightsAvailable = False
-    data = []
+    data = {}
     if os.path.isfile(filepath):
         print("\nFile exists\n")
         with open(filepath, 'r') as json_file:
             data = json.load(json_file)
-            for item in data:
-                if item['name'] == filename:
-                    isHighlightsAvailable = True
+            if data['name'] == filename:
+                isHighlightsAvailable = True
     
     if isHighlightsAvailable == True:
         print("Highlights already present for pdf: " + filename)
@@ -400,13 +402,12 @@ def get_user_pdf2(userPublicId, filename):
                         arr.append(jsont)
     if filename in proccessed_data:
         newFile = { "highlights": proccessed_data[filename], "name": filename }
-        data.append(newFile)
 
     with open(filepath, 'w') as json_file:
-        json.dump(data, json_file)
+        json.dump(newFile, json_file)
     
     response = app.response_class(
-                    response=json.dumps({ "highlights": data }),
+                    response=json.dumps({ "highlights": newFile }),
                     status=200,
                     mimetype='application/json',
                 )
