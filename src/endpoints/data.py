@@ -198,11 +198,13 @@ def graph_data(search_query):
     r= requests.get(f"https://api.pakcaselaw.com/v1/cases/?page_size=20&search={search_query}")
     results = r.json()["results"]
     nodes = [{"id":search_query}]
-    links =[]
+    links = []
+    nodes_urls = {}
     for result in results :
         nodes.append({"id":result["docket_number"]})
         links.append({"source":search_query,"target":result["docket_number"]})
-    return {"nodes":nodes,"links":links}
+        nodes_urls[result["docket_number"]] = result["frontend_url"]
+    return {"nodes": nodes, "links": links, "nodes_urls": nodes_urls}
 
 def search_data():
     return {
