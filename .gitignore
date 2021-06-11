@@ -12,3 +12,4 @@ Lib
 data
 pyvenv.cfg
 .vscode
+venv/

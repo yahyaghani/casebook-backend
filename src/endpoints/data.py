@@ -1,3 +1,5 @@
+import requests
+
 def json_data():
     return {
         "1708.08021.pdf": [
@@ -192,22 +194,15 @@ def json_data():
         ]
         };
 
-def graph_data():
-    return {
-    "nodes": [
-      { "id": "Harry" },
-      { "id": "Sally" },
-      { "id": "Alice" },
-      { "id": "Alice1" },
-      { "id": "Sally1" },
-      { "id": "Harry1" },
-    ],
-    "links": [
-      { "source": "Harry", "target": "Sally1" },
-      { "source": "Sally", "target": "Alice1" },
-      { "source": "Alice", "target": "Harry1" },
-    ],
-  }
+def graph_data(search_query):
+    r= requests.get(f"https://api.pakcaselaw.com/v1/cases/?page_size=20&search={search_query}")
+    results = r.json()["results"]
+    nodes = [{"id":search_query}]
+    links =[]
+    for result in results :
+        nodes.append({"id":result["docket_number"]})
+        links.append({"source":search_query,"target":result["docket_number"]})
+    return {"nodes":nodes,"links":links}
 
 def search_data():
     return {
