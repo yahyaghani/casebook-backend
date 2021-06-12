@@ -200,11 +200,18 @@ def graph_data(search_query):
     nodes = [{"id":search_query}]
     links = []
     nodes_urls = {}
+    nodes_previewes = {}
     for result in results :
-        nodes.append({"id":result["docket_number"]})
-        links.append({"source":search_query,"target":result["docket_number"]})
-        nodes_urls[result["docket_number"]] = result["frontend_url"]
-    return {"nodes": nodes, "links": links, "nodes_urls": nodes_urls}
+        node_id = f'{result["name"]}, {result["docket_number"]}'
+        nodes.append({"id": node_id })
+        nodes.append({"id":result["jurisdiction"]["name_long"]})
+        
+        links.append({"source": result["jurisdiction"]["name_long"], "target": node_id})
+        links.append({"source": result["jurisdiction"]["name_long"], "target": search_query})
+        nodes_urls[node_id] = result["frontend_url"]
+        nodes_previewes[node_id] = result["preview"]
+
+    return {"nodes": nodes, "links": links, "nodes_urls": nodes_urls, "nodes_previewes": nodes_previewes}
 
 def search_data():
     return {
