@@ -27,7 +27,6 @@ from pdfminer.converter import PDFPageAggregator
 from collections import Counter
 from typing import Pattern 
 import pandas as pd
-from sqlalchemy_serializer import SerializerMixin
 
 output_dir="./judgclsfymodel8"
 nlp = spacy.load(output_dir)
