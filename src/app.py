@@ -4,6 +4,8 @@ from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from .routes.pdf_api import bp_api
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.inspection import inspect
+from flask_migrate import Migrate
 from flask_socketio import SocketIO, emit
 from engineio.payload import Payload
 from flask_cors import CORS, cross_origin
@@ -25,6 +27,7 @@ from pdfminer.converter import PDFPageAggregator
 from collections import Counter
 from typing import Pattern 
 import pandas as pd
+from sqlalchemy_serializer import SerializerMixin
 
 output_dir="./judgclsfymodel8"
 nlp = spacy.load(output_dir)
@@ -42,6 +45,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 socketio = SocketIO(app,  cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
 
 
@@ -50,13 +55,65 @@ socketio = SocketIO(app,  cors_allowed_origins="http://localhost:3000", ping_int
 class UserModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True)
-    username = db.Column(db.String(80))
+    fname = db.Column(db.String(80))
+    lname = db.Column(db.String(80))
+    username = db.Column(db.String(80), unique=True)
+    city = db.Column(db.String(80))
+    country = db.Column(db.String(80))
+    organisation = db.Column(db.String(80))
     email = db.Column(db.String(80))
     password = db.Column(db.String(500))
     admin = db.Column(db.Boolean)
+    FilePosts = db.relationship('FilePost', backref=db.backref('user_model', lazy='joined'), lazy='select')
+    Ratings = db.relationship('Rating', backref=db.backref('user_model', lazy='select'), lazy='select')
 
     def __repr__(self):
         return f'{self.public_id}'
+
+class FilePost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fileName = db.Column(db.String(80))
+    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
+    total_rating = db.Column(db.Integer)
+    ratings = db.relationship('Rating', backref=db.backref('file_post', lazy='select'), lazy='joined')
+    
+    def __repr__(self):
+        return f'{self.id}'
+    
+    def serialize(self):
+        post = {c: getattr(self, c) for c in inspect(self).attrs.keys()}
+        if 'user_model' in post and getattr(self, 'user_model'):
+            del post['user_model']
+            post['user_info'] = {}
+            for c in inspect(self.user_model).attrs.keys():
+                post['user_info'][c] = getattr(self.user_model, c)
+            del post['user_info']['FilePosts']
+            del post['user_info']['Ratings']
+            del post['user_info']['password']
+        if 'ratings' in post:
+            post['all_ratings'] = []
+            for rating in post['ratings']:
+                newRating = {}
+                newRating['rating'] = getattr(rating, 'rating')
+                newRating['review'] = getattr(rating, 'review')
+                newRating['id'] = getattr(rating, 'id')
+                newRating['user_id'] = getattr(rating, 'user_id')
+                post['all_ratings'].append(newRating)
+            del post['ratings']
+        return post
+
+class Rating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rating = db.Column(db.Integer)
+    review = db.Column(db.String(80))
+    post_id = db.Column(db.Integer, db.ForeignKey('file_post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
+
+    def __repr__(self):
+        return f'{self.id}'
+
+    def serialize(self):
+        return {c: getattr(self, c) for c in inspect(self).attrs.keys()}
 
 # custom decorators
 
@@ -101,7 +158,9 @@ def register_user():
 
         if hashed_data:
             newuser = UserModel(public_id=str(uuid.uuid4(
-            )), username=data["username"], email=data["email"], password=hashed_data, admin=False)
+            )), username=data["username"], email=data["email"], password=hashed_data, admin=False,
+            fname=data["fname"], lname=data["lname"], city=data["city"], country=data["country"],
+            organisation=data["organisation"])
             db.session.add(newuser)
             db.session.commit()
             return jsonify({"message": f"account created welcome {newuser.username} "})
@@ -130,7 +189,11 @@ def login_user():
             token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
             ) + timedelta(minutes=30)}, app.config['SECRET_KEY'])
 
-            return jsonify({'auth_token': token.decode('UTF-8'), 'userPublicId': user.public_id, 'username': user.username, 'email': user.email})
+            return jsonify({'auth_token': token.decode('UTF-8'), 'userId': user.id, 'userPublicId': user.public_id, 
+            'username': user.username, 'email': user.email,
+            'city': user.city, 'country': user.country,
+            'fname': user.fname, 'lname': user.lname,
+            'organisation': user.organisation})
     except Exception as err:
         print('An exception occured!!')
         print(err)
@@ -183,7 +246,6 @@ def upload_file(currentuser):
         print(err)
         return make_response('Something went wrong!!', 500)
 
-
 @app.route('/get/files', methods=['GET'])
 @token_required
 def get_user_files(currentuser):
@@ -199,6 +261,134 @@ def get_user_files(currentuser):
             resp = jsonify({ 'files': userFiles })
             resp.status_code = 201
             return resp
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+@app.route('/file/share/<path:userPublicId>/<path:filename>', methods=['GET'])
+def create_file_post(userPublicId, filename):
+    try:
+        print(userPublicId)
+        print(filename)
+        dir_path = join(os.path.dirname(__file__), 'uploads', userPublicId)
+        filePath = dir_path + '/{}'.format(filename)
+        print(filePath)
+        if os.path.isfile(filePath) == False:
+            print('No files found')
+            resp = jsonify({'message': 'File Not Found!!'})
+            resp.status_code = 404
+            return resp
+        user = UserModel.query.filter_by(public_id=userPublicId).first()
+        post = FilePost.query.filter_by(fileName=filename, user_id=user.id).first()
+        print(post)
+        if not user:
+            resp = jsonify({'message': 'No user found with given publicId!'})
+            resp.status_code = 404
+            return resp
+        if post:
+            resp = jsonify({'message': 'File already shared!'})
+            resp.status_code = 400
+            return resp
+        newPost = FilePost(fileName=filename, total_rating=0, user_id=user.id)
+        db.session.add(newPost)
+        db.session.commit()
+        return jsonify({'message': 'file shared successfully', 'post': {'fileName': newPost.fileName,
+        'tatalRating': newPost.total_rating, 'user_id': newPost.user_id, 'ratings': newPost.ratings}})
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+@app.route('/rating/create', methods=['POST'])
+@token_required
+def create_post_rating(currentuser):
+    try:
+        # data = json.load(request.data)
+        data = json.loads(request.data)
+        print(data)
+        rating = data['rating']
+        review = data['review']
+        post_id = data['post_id']
+        
+        print(rating)
+        print(review)
+        print(post_id)
+        if not rating or not post_id:
+            resp = jsonify({'message': 'Post Id or Rating is not available!'})
+            resp.status_code = 400
+            return resp
+        ratingObj = Rating.query.filter_by(post_id=post_id).all()
+        postRating = {}
+        for item in ratingObj:
+            if item.user_id == currentuser.id:
+                postRating = item
+                break
+        print(postRating)
+        if postRating:
+            resp = jsonify({'message': 'User already rated this post!'})
+            resp.status_code = 400
+            return resp
+        post = FilePost.query.filter_by(id=post_id).first()
+        postObj = post.serialize()
+        total_rating = (
+            postObj['total_rating']*len(postObj['all_ratings']) + rating)/(len(postObj['all_ratings'])+ 1)
+        setattr(post, 'total_rating', total_rating)
+        db.session.commit()
+        newRating = Rating(review=review, rating=rating, user_id=currentuser.id, post_id=post_id)
+        db.session.add(newRating)
+        db.session.commit()
+        return jsonify({'message': 'Rating saved successfully'})
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+@app.route('/get/posts', methods=['GET'])
+@token_required
+def get_file_post(currentuser):
+    try:
+        print(currentuser)
+        posts = FilePost.query.filter_by().all()
+
+        if not posts:
+            print('posts not available!')
+            resp = jsonify({'message': 'No posts available!'}) 
+            resp.status_code = 404
+            return resp
+        
+        all_posts = []
+
+        for post in posts:
+            post = post.serialize()
+            # print(post)
+            post['fileUrl'] = join('uploads', post['user_info']['public_id'], post['fileName'])
+            all_posts.append(post)
+        return jsonify({ 'allPosts': all_posts })
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+@app.route('/get/ratings/<path:postId>', methods=['GET'])
+def get_file_post_ratings(postId):
+    try:
+        ratings = Rating.query.filter_by(post_id=postId).all()
+        # posts = posts.to_dict()
+        # users_posts = users_posts.to_dict()
+        if not ratings:
+            print('ratings not available!')
+            resp = jsonify({'message': 'No ratings available!'})
+            resp.status_code = 404
+            return resp
+        
+        all_ratings = []
+
+        for rating in ratings:
+            rating = rating.serialize()
+            print(rating)
+            all_ratings.append(rating)
+        return jsonify({'allRatings': all_ratings})
     except Exception as err:
         print('An exception occured!!')
         print(err)
