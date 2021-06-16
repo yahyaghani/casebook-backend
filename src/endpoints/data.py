@@ -197,21 +197,29 @@ def json_data():
 def graph_data(search_query):
     r= requests.get(f"https://api.pakcaselaw.com/v1/cases/?page_size=20&search={search_query}")
     results = r.json()["results"]
-    nodes = [{"id":search_query}]
+    nodes_id = []
+    jurisdiction_nodes_id = []
     links = []
-    nodes_urls = {}
-    nodes_previewes = {}
+    nodes = []
+    nodes_data = {}
+    nodes.append({"id":search_query, "size": 400, "symbolType": "triangle"})
     for result in results :
-        node_id = f'{result["name"]}, {result["docket_number"]}'
-        nodes.append({"id": node_id })
-        nodes.append({"id":result["jurisdiction"]["name_long"]})
-        
+        node_id = result["docket_number"]
+        nodes_id.append(node_id)
+        nodes_data[node_id]=  result
+        jurisdiction_nodes_id.append(result["jurisdiction"]["name_long"])
         links.append({"source": result["jurisdiction"]["name_long"], "target": node_id})
-        links.append({"source": result["jurisdiction"]["name_long"], "target": search_query})
-        nodes_urls[node_id] = result["frontend_url"]
-        nodes_previewes[node_id] = result["preview"]
-
-    return {"nodes": nodes, "links": links, "nodes_urls": nodes_urls, "nodes_previewes": nodes_previewes}
+        
+    nodes_id = set(nodes_id)
+    for node_id in nodes_id :
+        nodes.append({"id": node_id})
+    jurisdiction_nodes_id = set(jurisdiction_nodes_id)
+    for node_id in jurisdiction_nodes_id:
+        nodes.append({"id": node_id, "size": 350, "symbolType":"square"})
+        links.append({"source": node_id, "target": search_query})
+    graph_data = {"links": links, "nodes": nodes}
+    return {"graph_data": graph_data, "nodes_data": nodes_data}
+ 
 
 def search_data():
     return {
