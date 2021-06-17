@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 from src.endpoints.data import json_data, graph_data, search_data
 from flask import send_file
 import json
@@ -23,10 +23,15 @@ bp_api = Blueprint(name="pdf_api", import_name=__name__)
 @bp_api.route('/graph', methods=['GET', 'OPTION'])
 def get_graph_data():
     """ get json data """
-    output1 = graph_data()
-    response = jsonify(output1)
-    return response
-
+    search_query = request.args.get("search_query")
+    try:
+        output1 = graph_data(search_query)
+        response = jsonify(output1)
+        return response
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
 
 @bp_api.route('/json', methods=['GET'])
 def get_json_data():

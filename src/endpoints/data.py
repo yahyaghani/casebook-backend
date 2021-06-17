@@ -1,3 +1,5 @@
+import requests
+
 def json_data():
     return {
         "1708.08021.pdf": [
@@ -192,22 +194,32 @@ def json_data():
         ]
         };
 
-def graph_data():
-    return {
-    "nodes": [
-      { "id": "Harry" },
-      { "id": "Sally" },
-      { "id": "Alice" },
-      { "id": "Alice1" },
-      { "id": "Sally1" },
-      { "id": "Harry1" },
-    ],
-    "links": [
-      { "source": "Harry", "target": "Sally1" },
-      { "source": "Sally", "target": "Alice1" },
-      { "source": "Alice", "target": "Harry1" },
-    ],
-  }
+def graph_data(search_query):
+    r= requests.get(f"https://api.pakcaselaw.com/v1/cases/?page_size=20&search={search_query}")
+    results = r.json()["results"]
+    nodes_id = []
+    jurisdiction_nodes_id = []
+    links = []
+    nodes = []
+    nodes_data = {}
+    nodes.append({"id":search_query, "size": 400, "symbolType": "triangle"})
+    for result in results :
+        node_id = result["docket_number"]
+        nodes_id.append(node_id)
+        nodes_data[node_id]=  result
+        jurisdiction_nodes_id.append(result["jurisdiction"]["name_long"])
+        links.append({"source": result["jurisdiction"]["name_long"], "target": node_id})
+        
+    nodes_id = set(nodes_id)
+    for node_id in nodes_id :
+        nodes.append({"id": node_id})
+    jurisdiction_nodes_id = set(jurisdiction_nodes_id)
+    for node_id in jurisdiction_nodes_id:
+        nodes.append({"id": node_id, "size": 350, "symbolType":"square"})
+        links.append({"source": node_id, "target": search_query})
+    graph_data = {"links": links, "nodes": nodes}
+    return {"graph_data": graph_data, "nodes_data": nodes_data}
+ 
 
 def search_data():
     return {
