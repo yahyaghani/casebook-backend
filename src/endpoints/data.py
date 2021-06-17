@@ -202,7 +202,7 @@ def graph_data(search_query):
     links = []
     nodes = []
     nodes_data = {}
-    nodes.append({"id":search_query, "size": 400, "symbolType": "triangle"})
+    nodes.append({"id":search_query, "size": 300,  "svg":"../images/graph-svgs/query_node.svg"})
     for result in results :
         node_id = result["docket_number"]
         nodes_id.append(node_id)
@@ -212,10 +212,10 @@ def graph_data(search_query):
         
     nodes_id = set(nodes_id)
     for node_id in nodes_id :
-        nodes.append({"id": node_id})
+        nodes.append({"id": node_id, "svg":"../images/graph-svgs/docket_number_node.svg"})
     jurisdiction_nodes_id = set(jurisdiction_nodes_id)
     for node_id in jurisdiction_nodes_id:
-        nodes.append({"id": node_id, "size": 350, "symbolType":"square"})
+        nodes.append({"id": node_id, "size": 300, "svg":"../images/graph-svgs/jurisdiction_node.svg"})
         links.append({"source": node_id, "target": search_query})
     graph_data = {"links": links, "nodes": nodes}
     return {"graph_data": graph_data, "nodes_data": nodes_data}
