@@ -526,69 +526,78 @@ def get_user_pdf2(userPublicId, filename):
     id_counter = 0
     proccessed_data = {}
 
+    pageSizesList = []
+ 
     for page in pages:
         counter += 1
         print('Processing ', counter, 'page...')
-
+        # size=page.mediabox
+        # print(size)
         interpreter.process_page(page)
         layout = device.get_result()
         for lobj in layout:
             if isinstance(lobj, LTTextBox):
-                x1, y1, x2, y2, text = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3], lobj.get_text(
+                x1, y0_orig, x2, y1_orig, text = lobj.bbox[0], lobj.bbox[1], lobj.bbox[2], lobj.bbox[3], lobj.get_text(
                 )
+                y1 = page.mediabox[3] - y1_orig
+                y2 = page.mediabox[3] - y0_orig
+
+                
+
+
                 text = text.strip()
                 doc = nlp(text)
 
                 sentences = [sent.string.strip() for sent in doc.sents]
                 json_dump = []
-                for sentence in sentences:
+                # for sentence in sentences:
 
-                    if len(sentence) > 33:
-                        doc2 = nlp(sentence)
-                        # doc2.cats.pop('ISSUE')
-                        # doc2.cats.pop('OTHER')
-                        # doc2.cats=total(doc2.cats)
-                        c = Counter(doc2.cats)
-                        most_common = c.most_common(1)  # returns top 3 pairs
-                        # my_keys = [key for key, val in most_common]
-                        # top_category = get_top_cat(doc2)
-                        # result = re.findall(pattern, sentence, re.M|re.I)
-
-                        id_counter += 1
-                        jsont = {
-                            "comment": {
-                                "emoji": "NONE",
-                                "text": most_common[0][0],
+                if len(text) > 43:
+                    # doc2 = nlp(sentence)
+                    # doc2.cats.pop('ISSUE')
+                    # doc2.cats.pop('OTHER')
+                    # doc2.cats=total(doc2.cats)
+                    c = Counter(doc.cats)
+                    most_common = c.most_common(1)  # returns top 3 pairs
+                    # my_keys = [key for key, val in most_common]
+                    # top_category = get_top_cat(doc2)
+                    # result = re.findall(pattern, sentence, re.M|re.I)
+                    id_counter += 1
+                    jsont = {
+                        "comment": {
+                            "emoji":"",
+                            "text": most_common[0][0],
+                        },
+                        "content": {
+                            "text": text,
+                        },
+                        "id": str(id_counter),
+                        "position": {
+                            "boundingRect": {
+                              
+                                "x1": x1,
+                                "y1": y1,
+                                "x2": x2,
+                                "y2": y2,
+                                  "height":  page.mediabox[3],
+                                "width":  page.mediabox[2]
                             },
-                            "content": {
-                                "text": sentence,
-                            },
-                            "id": str(id_counter),
-                            "position": {
-                                "boundingRect": {
-                                    "height": 1200,
-                                    "width": 809.9999999999999,
+                            "pageNumber": counter,
+                            "rects": [
+                                {
+                         
                                     "x1": x1,
                                     "y1": y1,
                                     "x2": x2,
                                     "y2": y2,
-                                },
-                                "pageNumber": counter,
-                                "rects": [
-                                    {
-                                        "height": 1200,
-                                        "width": 809.9999999999999,
-                                        "x1": x1,
-                                        "y1": y1,
-                                        "x2": x2,
-                                        "y2": y2,
-                                    }
-                                ]
-                            }
+                                               "height":  page.mediabox[3], # get height of each page
+                                "width":  page.mediabox[2]# get width of each page
+                                }
+                            ]
                         }
-
-                        arr = proccessed_data.setdefault(filename, [])
-                        arr.append(jsont)
+                    }
+                    arr = proccessed_data.setdefault(filename, [])
+                    arr.append(jsont)
     if filename in proccessed_data:
         newFile = { "highlights": proccessed_data[filename], "name": filename }
 
