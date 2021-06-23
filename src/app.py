@@ -28,9 +28,7 @@ from collections import Counter
 from typing import Pattern 
 import pandas as pd
 import sys
-sys.path.append(os.getcwd()+"\\src\\textAnonymizer")
-# print(sys.path)
-import text_anonymizer
+from .textAnonymizer import text_anonymizer
 
 output_dir="./judgclsfymodel8"
 nlp = spacy.load(output_dir)
