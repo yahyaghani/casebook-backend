@@ -22,8 +22,9 @@ import en_core_web_sm, random
 import os
 # reset random seed generator
 random.seed(0)
-fileDir = os.path.dirname(os.path.realpath(__file__))
-print("file driectory",fileDir)
+fileDir = os.path.dirname(os.path.abspath(__file__))
+
+
 with open(fileDir+'\\characters_hg2g.txt','r') as f:
     fictional_person = [x.strip() for x in f.readlines()]
 
