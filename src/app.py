@@ -27,6 +27,10 @@ from pdfminer.converter import PDFPageAggregator
 from collections import Counter
 from typing import Pattern 
 import pandas as pd
+import sys
+sys.path.append(os.getcwd()+"\\src\\textAnonymizer")
+# print(sys.path)
+import text_anonymizer
 
 output_dir="./judgclsfymodel8"
 nlp = spacy.load(output_dir)
@@ -180,15 +184,13 @@ def login_user():
             return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
         user = UserModel.query.filter_by(username=auth['username']).first()
         print(user)
-
         if not user:
             return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
 
         if check_password_hash(user.password, auth['password']):
             token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
             ) + timedelta(minutes=30)}, app.config['SECRET_KEY'])
-
-            return jsonify({'auth_token': token.decode('UTF-8'), 'userId': user.id, 'userPublicId': user.public_id, 
+            return jsonify({'auth_token': token, 'userId': user.id, 'userPublicId': user.public_id, 
             'username': user.username, 'email': user.email,
             'city': user.city, 'country': user.country,
             'fname': user.fname, 'lname': user.lname,
@@ -612,7 +614,23 @@ def get_user_pdf2(userPublicId, filename):
     return response
 
 
+@app.route('/textanonymizer', methods=['POST'])
+def text_anonymizer_post():
+    # input data in json format
+    input_json = request.json
+    # parse json data
+    d = input_json
 
+    # anonymize text
+    anonymized_text = text_anonymizer.anonymize(d['text'],
+                                                name_types=d['entities'],
+                                                fictional = d['fake_names'])
+    
+    # convert the output into a json file
+    response = json.dumps(anonymized_text)
+
+    # return the json file
+    return response
 
 @socketio.on('connect')
 def test_connect():

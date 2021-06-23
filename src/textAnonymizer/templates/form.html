@@ -1,0 +1,62 @@
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<body>
+    <h1>Text Anonymizer</h1>
+
+    <form method="POST">
+        <p>Enter text below:</p>
+        <textarea name="text" cols="50" rows="10"></textarea>
+
+        <p>Which type of names would you like to anonymize?</p>
+        <div>
+            <input type="checkbox" name="name_types_checkbox" id="person" value="PERSON" checked>
+            <label for="person">Person</label>
+        </div>
+        <div>
+            <input type="checkbox" name="name_types_checkbox" id="norp" value="NORP">
+            <label for="norp">Nationalities or religious or political groups</label>
+        </div>
+        <div>
+            <input type="checkbox" name="name_types_checkbox" id="org" value="ORG">
+            <label for="org">Companies, agencies, institutions, etc.</label>
+        </div>
+        <div>
+            <input type="checkbox" name="name_types_checkbox" id="gpe" value="GPE">
+            <label for="gpe">Countries, cities, states</label>
+        </div>
+        <div>
+            <input type="checkbox" name="name_types_checkbox" id="date" value="DATE">
+            <label for="date">Date</label>
+        </div>        
+        <div>
+            <input type="checkbox" name="name_types_checkbox" id="language" value="LANGUAGE">
+            <label for="language">Languages</label>
+        </div>
+        <div>
+            <input type="checkbox" name="name_types_checkbox" id="money" value="MONEY">
+            <label for="money">Monetary values</label>
+        </div>
+
+        </br>
+        <div>
+            <fieldset>
+                <input type="checkbox" name="fictional_checkbox" id="fictional" value="FICTIONAL">
+                <label for="fictional">Replace names (people, countries, languages, etc.) with fictional names</label>
+            </fieldset>
+        </div>
+        </br>
+
+        <input type="submit" value="Anonymize text!">
+    </form>
+
+    {% if anonymized_text %}
+    <h2>Original text:</h2>
+        <p>{{original_text}}</p>
+
+        <h2>Anonymized text:</h2>
+        <p>{{anonymized_text}}</p>
+    {% endif %}
+
+</body>
+</html>
