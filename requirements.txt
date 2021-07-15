@@ -34,7 +34,13 @@ six==1.16.0
 SQLAlchemy==1.4.15
 toml==0.10.2
 urllib3==1.26.4
-uWSGI==2.0.19.1
 Werkzeug==2.0.1
 Spacy==2.3
 Pdfminer
+flask_migrate
+jwt
+pyJWT==1.7.1
+Werkzeug==2.0.1
+Spacy==2.3
+Pdfminer
+uWSGI==2.0.19.1

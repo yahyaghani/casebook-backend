@@ -12,10 +12,17 @@ from pdfminer.converter import PDFPageAggregator
 from collections import Counter
 from typing import Pattern 
 import pandas as pd
+import spacy
+import re
+from typing import Pattern 
+import pandas as pd
+
 
 output_dir= os.path.dirname(os.path.realpath(__file__)) + "/../../judgclsfymodel8"
-nlp = spacy.load(output_dir)
+output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../../core_law_md5"
 
+nlp = spacy.load(output_dir)
+nlp3=spacy.load(output_dir2)
 
 bp_api = Blueprint(name="pdf_api", import_name=__name__)
 
@@ -70,13 +77,21 @@ def get_json_data():
                 )
                 text = text.strip()
                 doc = nlp(text)
+                doc3=nlp3(text)
+                entities = [(ent.text, ent.label_) for ent in doc3.ents ]
+                print(entities)
 
+                # doc3= nlp3(text)
                 sentences = [sent.string.strip() for sent in doc.sents]
                 json_dump = []
                 for sentence in sentences:
 
                     if len(sentence) > 33:
+                        # doc3=nlp3(sentence)
                         doc2 = nlp(sentence)
+                        entities = [(ent.text, ent.label_) for ent in doc3.ents ]
+                        print(entities)
+
                         # doc2.cats.pop('ISSUE')
                         # doc2.cats.pop('OTHER')
                         # doc2.cats=total(doc2.cats)
@@ -122,7 +137,7 @@ def get_json_data():
                         arr = proccessed_data.setdefault(filename, [])
                         arr.append(jsont)
     return jsonify(proccessed_data)
-
+    
 @bp_api.route('/2newjson', methods=['GET'])
 def get_newjson_data():
     """ get json data """
