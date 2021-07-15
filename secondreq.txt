@@ -1,6 +1,0 @@
-Werkzeug==2.0.1
-Spacy==2.3
-Pdfminer
-flask_migrate
-jwt
-pyJWT==1.7.1
