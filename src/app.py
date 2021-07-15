@@ -611,20 +611,24 @@ def get_user_pdf2(userPublicId, filename):
                 )
     return response
 
-
-
-
 @socketio.on('connect')
 def test_connect():
     print('Connection is on!!')
 
     @socketio.on('get-document')
-    def getDocumentId(documentId):
+    def getDocumentId(info):
         try:
-            dir = os.path.join(os.path.dirname(__file__) + '/notes')
+            print(info)
+            data = json.loads(info)
+            documentId = data['documentId']
+            fileName = data['fileName']
+            print(data)
+            dir = os.path.join(os.path.dirname(__file__) + '/notes/' + documentId)
             if os.path.isdir(dir) == False:
                 os.makedirs(dir, exist_ok=True)
-            filepath = dir + '/' + documentId + '.json'
+            filepath = dir + '/' + 'index.json'
+            if fileName:
+                filepath = dir + '/' + fileName + '.json'
             if os.path.isfile(filepath):
                 print("\nFile exists\n")
                 with open(filepath) as json_file:
