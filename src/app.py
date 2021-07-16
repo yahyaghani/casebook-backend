@@ -29,7 +29,9 @@ from typing import Pattern
 import pandas as pd
 
 output_dir="./judgclsfymodel8"
+output_dir3="./core_law_md5"
 nlp = spacy.load(output_dir)
+nlp3=spacy.load(output_dir3)
 
 Payload.max_decode_packets = 50
 ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
@@ -547,6 +549,11 @@ def get_user_pdf2(userPublicId, filename):
 
                 text = text.strip()
                 doc = nlp(text)
+                #The Citation Classifier to build graph from
+                doc3=nlp3(text)
+                entities = [(ent.text, ent.label_) for ent in doc3.ents ]
+                #testing output of classifier core_law_md5
+                print(entities)
 
                 sentences = [sent.string.strip() for sent in doc.sents]
                 json_dump = []

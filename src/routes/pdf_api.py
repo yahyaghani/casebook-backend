@@ -89,8 +89,8 @@ def get_json_data():
                     if len(sentence) > 33:
                         # doc3=nlp3(sentence)
                         doc2 = nlp(sentence)
-                        entities = [(ent.text, ent.label_) for ent in doc3.ents ]
-                        print(entities)
+                        # entities2 = [(ent.text, ent.label_) for ent in doc3.ents ]
+                        # print(entities2)
 
                         # doc2.cats.pop('ISSUE')
                         # doc2.cats.pop('OTHER')
