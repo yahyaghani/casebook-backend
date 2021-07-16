@@ -30,7 +30,9 @@ from typing import Pattern
 import pandas as pd
 
 output_dir="./judgclsfymodel8"
+output_dir3="./core_law_md5"
 nlp = spacy.load(output_dir)
+nlp3=spacy.load(output_dir3)
 
 output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../core_law_md5"
 nlp3=spacy.load(output_dir2)
@@ -556,6 +558,11 @@ def get_user_pdf2(userPublicId, filename):
 
                 text = text.strip()
                 doc = nlp(text)
+                #The Citation Classifier to build graph from
+                doc3=nlp3(text)
+                entities = [(ent.text, ent.label_) for ent in doc3.ents ]
+                #testing output of classifier core_law_md5
+                print(entities)
 
                 doc3=nlp3(text)
                 for ent in doc3.ents:
