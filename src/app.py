@@ -18,7 +18,8 @@ from os.path import isfile, join
 import uuid
 import jwt
 from functools import wraps
-import spacy 
+import spacy
+from spacy.tokens.span import Span
 from pdfminer.layout import LAParams, LTTextBox
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
@@ -30,6 +31,9 @@ import pandas as pd
 
 output_dir="./judgclsfymodel8"
 nlp = spacy.load(output_dir)
+
+output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../core_law_md5"
+nlp3=spacy.load(output_dir2)
 
 Payload.max_decode_packets = 50
 ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
@@ -117,6 +121,12 @@ class Rating(db.Model):
 # custom decorators
 
 db.create_all()
+
+class DictEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Span):
+            return str(obj)
+        return obj.__dict__
 
 def token_required(f):
     @wraps(f)
@@ -527,6 +537,8 @@ def get_user_pdf2(userPublicId, filename):
     proccessed_data = {}
 
     pageSizesList = []
+
+    entities = []
  
     for page in pages:
         counter += 1
@@ -542,11 +554,12 @@ def get_user_pdf2(userPublicId, filename):
                 y1 = page.mediabox[3] - y1_orig
                 y2 = page.mediabox[3] - y0_orig
 
-                
-
-
                 text = text.strip()
                 doc = nlp(text)
+
+                doc3=nlp3(text)
+                for ent in doc3.ents:
+                    entities.append(ent)
 
                 sentences = [sent.string.strip() for sent in doc.sents]
                 json_dump = []
@@ -598,8 +611,9 @@ def get_user_pdf2(userPublicId, filename):
                     }
                     arr = proccessed_data.setdefault(filename, [])
                     arr.append(jsont)
+    newFile = {}
     if filename in proccessed_data:
-        newFile = { "highlights": proccessed_data[filename], "name": filename }
+        newFile = { "highlights": proccessed_data[filename], "name": filename, "entities": entities }
 
     with open(filepath, 'w') as json_file:
         json.dump(newFile, json_file)
