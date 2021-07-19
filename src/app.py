@@ -19,7 +19,6 @@ import uuid
 import jwt
 from functools import wraps
 import spacy
-from spacy.tokens.span import Span
 from pdfminer.layout import LAParams, LTTextBox
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
@@ -123,12 +122,6 @@ class Rating(db.Model):
 # custom decorators
 
 db.create_all()
-
-class DictEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Span):
-            return str(obj)
-        return obj.__dict__
 
 def token_required(f):
     @wraps(f)
@@ -455,6 +448,28 @@ def get_user_highlights(currentuser):
         print(err)
         return make_response('Something went wrong!!', 500)
 
+@app.route('/get-graphdata', methods=['GET'])
+@token_required
+def get_user_highlights(currentuser):
+    try:
+        dir = os.path.join(os.path.dirname(__file__) + '/graphData/' + currentuser.public_id )
+        if os.path.isdir(dir) == False:
+            print("doesnt exist")
+            os.makedirs(dir, exist_ok=True)
+            resp = jsonify({'message': 'No graphdata available for the user'})
+            resp.status_code = 400
+            return resp
+        
+        data = [json.load(open(join(dir, f))) for f in listdir(dir) if isfile(join(dir, f))]
+
+        resp = jsonify({ 'graphdata': data })
+        resp.status_code = 200
+        return resp
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
 
 @app.route('/uploads/<path:userPublicId>/<path:filename>', methods=['GET'])
 def get_user_pdf(userPublicId, filename):
@@ -541,6 +556,7 @@ def get_user_pdf2(userPublicId, filename):
     pageSizesList = []
 
     entities = []
+    labels = []
  
     for page in pages:
         counter += 1
@@ -559,14 +575,15 @@ def get_user_pdf2(userPublicId, filename):
                 text = text.strip()
                 doc = nlp(text)
                 #The Citation Classifier to build graph from
-                doc3=nlp3(text)
-                entities = [(ent.text, ent.label_) for ent in doc3.ents ]
-                #testing output of classifier core_law_md5
-                print(entities)
+                # doc3=nlp3(text)
 
                 doc3=nlp3(text)
+                ents = [(ent.text, ent.label_) for ent in doc3.ents ]
+                # testing output of classifier core_law_md5
+                print(ents)
                 for ent in doc3.ents:
-                    entities.append(ent)
+                    entities.append(str(ent.text))
+                    labels.append(str(ent.label_))
 
                 sentences = [sent.string.strip() for sent in doc.sents]
                 json_dump = []
@@ -619,8 +636,17 @@ def get_user_pdf2(userPublicId, filename):
                     arr = proccessed_data.setdefault(filename, [])
                     arr.append(jsont)
     newFile = {}
+    graphData = {}
+    graphDir = os.path.join(os.path.dirname(__file__) + '/graphData/' + userPublicId)    
+    if os.path.isdir(graphDir) == False:
+        print("doesnt exist")
+        os.makedirs(graphDir, exist_ok=True)
     if filename in proccessed_data:
         newFile = { "highlights": proccessed_data[filename], "name": filename, "entities": entities }
+        graphData = { "graph_nodes": entities, "labels": labels}
+
+    with open(join(graphDir, filename + '.json'), 'w') as graph_file:
+        json.dump(graphData, graph_file)
 
     with open(filepath, 'w') as json_file:
         json.dump(newFile, json_file)
