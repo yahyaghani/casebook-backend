@@ -647,7 +647,8 @@ def get_user_pdf2(userPublicId, filename):
         print(len(labels))
         print(len(entities))
 
-        nodes = [{"id" : x} for x in (entities + labels)]
+        my_labels = ["CITATION", "CASENAME", "INSTRUMENT", "PROVISION"]
+        nodes = [{"id" : x} for x in (entities + my_labels)]
         labels = [{"source": label, "target": target } for label, target in zip(labels, entities)]
 
         print(nodes)
