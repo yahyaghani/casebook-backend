@@ -28,7 +28,7 @@ from collections import Counter
 from typing import Pattern 
 import pandas as pd
 
-output_dir="./judgclsfymodel8"
+output_dir="./judgclsfymodel12"
 output_dir3="./core_law_md5"
 nlp = spacy.load(output_dir)
 nlp3=spacy.load(output_dir3)
@@ -450,7 +450,7 @@ def get_user_highlights(currentuser):
 
 @app.route('/get-graphdata', methods=['GET'])
 @token_required
-def get_user_highlights(currentuser):
+def get_user_graphdata(currentuser):
     try:
         dir = os.path.join(os.path.dirname(__file__) + '/graphData/' + currentuser.public_id )
         if os.path.isdir(dir) == False:
@@ -643,7 +643,12 @@ def get_user_pdf2(userPublicId, filename):
         os.makedirs(graphDir, exist_ok=True)
     if filename in proccessed_data:
         newFile = { "highlights": proccessed_data[filename], "name": filename, "entities": entities }
-        graphData = { "graph_nodes": entities, "labels": labels}
+        graphData = {
+                    "graph_nodes": [
+                      { "id": entities + labels}],
+                    "labels": [
+                      { "source": entities, "target": labels }]}
+      
 
     with open(join(graphDir, filename + '.json'), 'w') as graph_file:
         json.dump(graphData, graph_file)
