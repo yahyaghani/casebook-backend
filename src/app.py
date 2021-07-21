@@ -27,6 +27,7 @@ from pdfminer.converter import PDFPageAggregator
 from collections import Counter
 from typing import Pattern 
 import pandas as pd
+import numpy as np
 
 output_dir="./judgclsfymodel12"
 output_dir3="./core_law_md5"
@@ -643,12 +644,20 @@ def get_user_pdf2(userPublicId, filename):
         os.makedirs(graphDir, exist_ok=True)
     if filename in proccessed_data:
         newFile = { "highlights": proccessed_data[filename], "name": filename, "entities": entities }
+        print(len(labels))
+        print(len(entities))
+
+        my_labels = ["CITATION", "CASENAME", "INSTRUMENT", "PROVISION","JUDGE","COURT"]
+        nodes = [{"id" : x} for x in (entities + my_labels)]
+        labels = [{"source": label, "target": target } for label, target in zip(labels, entities)]
+
+        print(nodes)
+        print(labels)
+
         graphData = {
-                    "graph_nodes": [
-                      { "id": entities + labels}],
-                    "labels": [
-                      { "source": entities, "target": labels }]}
-      
+                        "nodes": nodes,
+                        "links": labels
+                    }
 
     with open(join(graphDir, filename + '.json'), 'w') as graph_file:
         json.dump(graphData, graph_file)
