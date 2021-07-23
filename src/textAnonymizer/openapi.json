@@ -1,0 +1,65 @@
+{
+  "openapi" : "3.0.0",
+  "info" : {
+    "title" : "Text Anonymizer",
+    "description" : "Text Anonymizer API",
+    "version" : "1.0"
+  },
+  "servers" : [ {
+    "url" : "https://text-anonymizer.herokuapp.com/api",
+    "description" : "Text Anonymizer API"
+  } ],
+  "paths" : {
+    "/api" : {
+      "post" : {
+        "description" : "Anonymize text",
+        "requestBody" : {
+          "description" : "Json with three fields",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/body"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Returns anonymized text",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "body" : {
+        "type" : "object",
+        "properties" : {
+          "text" : {
+            "type" : "string",
+            "description" : "Input text",
+            "example" : "John went to Arizona."
+          },
+          "entities" : {
+            "type" : "array",
+            "description" : "Entity types to be anonymized (see https://spacy.io/api/annotation#named-entities)",
+            "example" : [ "PERSON", "NORP", "FAC", "ORG", "GPE", "LOC", "PRODUCT", "EVENT", "WORK_OF_ART", "LAW", "LANGUAGE", "DATE", "TIME", "PERCENT", "MONEY", "QUANTITY", "ORDINAL", "CARDINAL" ],
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "fake_names" : {
+            "type" : "boolean",
+            "description" : "Whether to replace names with fake names or not",
+            "example" : true
+          }
+        }
+      }
+    }
+  }
+}
