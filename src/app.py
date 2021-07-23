@@ -18,7 +18,7 @@ from os.path import isfile, join
 import uuid
 import jwt
 from functools import wraps
-import spacy 
+import spacy
 from pdfminer.layout import LAParams, LTTextBox
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
@@ -29,9 +29,15 @@ from typing import Pattern
 import pandas as pd
 import sys
 from .textAnonymizer import text_anonymizer
+import numpy as np
 
-output_dir="./judgclsfymodel8"
+output_dir="./judgclsfymodel12"
+output_dir3="./core_law_md5"
 nlp = spacy.load(output_dir)
+nlp3=spacy.load(output_dir3)
+
+output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../core_law_md5"
+nlp3=spacy.load(output_dir2)
 
 Payload.max_decode_packets = 50
 ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
@@ -443,6 +449,28 @@ def get_user_highlights(currentuser):
         print(err)
         return make_response('Something went wrong!!', 500)
 
+@app.route('/get-graphdata', methods=['GET'])
+@token_required
+def get_user_graphdata(currentuser):
+    try:
+        dir = os.path.join(os.path.dirname(__file__) + '/graphData/' + currentuser.public_id )
+        if os.path.isdir(dir) == False:
+            print("doesnt exist")
+            os.makedirs(dir, exist_ok=True)
+            resp = jsonify({'message': 'No graphdata available for the user'})
+            resp.status_code = 400
+            return resp
+        
+        data = [json.load(open(join(dir, f))) for f in listdir(dir) if isfile(join(dir, f))]
+
+        resp = jsonify({ 'graphdata': data })
+        resp.status_code = 200
+        return resp
+    except Exception as err:
+        print('An exception occured!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
 
 @app.route('/uploads/<path:userPublicId>/<path:filename>', methods=['GET'])
 def get_user_pdf(userPublicId, filename):
@@ -527,6 +555,9 @@ def get_user_pdf2(userPublicId, filename):
     proccessed_data = {}
 
     pageSizesList = []
+
+    entities = []
+    labels = []
  
     for page in pages:
         counter += 1
@@ -542,11 +573,18 @@ def get_user_pdf2(userPublicId, filename):
                 y1 = page.mediabox[3] - y1_orig
                 y2 = page.mediabox[3] - y0_orig
 
-                
-
-
                 text = text.strip()
                 doc = nlp(text)
+                #The Citation Classifier to build graph from
+                # doc3=nlp3(text)
+
+                doc3=nlp3(text)
+                ents = [(ent.text, ent.label_) for ent in doc3.ents ]
+                # testing output of classifier core_law_md5
+                print(ents)
+                for ent in doc3.ents:
+                    entities.append(str(ent.text))
+                    labels.append(str(ent.label_))
 
                 sentences = [sent.string.strip() for sent in doc.sents]
                 json_dump = []
@@ -598,8 +636,31 @@ def get_user_pdf2(userPublicId, filename):
                     }
                     arr = proccessed_data.setdefault(filename, [])
                     arr.append(jsont)
+    newFile = {}
+    graphData = {}
+    graphDir = os.path.join(os.path.dirname(__file__) + '/graphData/' + userPublicId)    
+    if os.path.isdir(graphDir) == False:
+        print("doesnt exist")
+        os.makedirs(graphDir, exist_ok=True)
     if filename in proccessed_data:
-        newFile = { "highlights": proccessed_data[filename], "name": filename }
+        newFile = { "highlights": proccessed_data[filename], "name": filename, "entities": entities }
+        print(len(labels))
+        print(len(entities))
+
+        my_labels = ["CITATION", "CASENAME", "INSTRUMENT", "PROVISION","JUDGE","COURT"]
+        nodes = [{"id" : x} for x in (entities + my_labels)]
+        labels = [{"source": label, "target": target } for label, target in zip(labels, entities)]
+
+        print(nodes)
+        print(labels)
+
+        graphData = {
+                        "nodes": nodes,
+                        "links": labels
+                    }
+
+    with open(join(graphDir, filename + '.json'), 'w') as graph_file:
+        json.dump(graphData, graph_file)
 
     with open(filepath, 'w') as json_file:
         json.dump(newFile, json_file)
@@ -630,17 +691,25 @@ def text_anonymizer_post():
     # return the json file
     return response
 
+
 @socketio.on('connect')
 def test_connect():
     print('Connection is on!!')
 
     @socketio.on('get-document')
-    def getDocumentId(documentId):
+    def getDocumentId(info):
         try:
-            dir = os.path.join(os.path.dirname(__file__) + '/notes')
+            print(info)
+            data = json.loads(info)
+            documentId = data['documentId']
+            fileName = data['fileName']
+            print(data)
+            dir = os.path.join(os.path.dirname(__file__) + '/notes/' + documentId)
             if os.path.isdir(dir) == False:
                 os.makedirs(dir, exist_ok=True)
-            filepath = dir + '/' + documentId + '.json'
+            filepath = dir + '/' + 'index.json'
+            if fileName:
+                filepath = dir + '/' + fileName + '.json'
             if os.path.isfile(filepath):
                 print("\nFile exists\n")
                 with open(filepath) as json_file:
