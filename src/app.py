@@ -27,8 +27,6 @@ from pdfminer.converter import PDFPageAggregator
 from collections import Counter
 from typing import Pattern 
 import pandas as pd
-import sys
-from .textAnonymizer import text_anonymizer
 import numpy as np
 
 output_dir="./judgclsfymodel12"
@@ -188,12 +186,14 @@ def login_user():
             return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
         user = UserModel.query.filter_by(username=auth['username']).first()
         print(user)
+
         if not user:
             return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
 
         if check_password_hash(user.password, auth['password']):
             token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
             ) + timedelta(minutes=30)}, app.config['SECRET_KEY'])
+
             return jsonify({'auth_token': token.decode('UTF-8'), 'userId': user.id, 'userPublicId': user.public_id, 
             'username': user.username, 'email': user.email,
             'city': user.city, 'country': user.country,
@@ -210,6 +210,7 @@ def login_user():
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+from werkzeug.datastructures import ImmutableMultiDict
 
 @app.route('/upload/file', methods=['POST'])
 @token_required
@@ -221,31 +222,43 @@ def upload_file(currentuser):
             resp = jsonify({'message': 'No file part in the request'})
             resp.status_code = 400
             return resp
-        file = request.files['file']
-        if file.filename == '':
-            print('No filename selected')
-            resp = jsonify({'message': 'No file selected for uploading'})
-            resp.status_code = 400
-            return resp
-        if file and allowed_file(file.filename):
-            dir = os.path.join(os.path.dirname(__file__) +
-                            '/uploads/', currentuser.public_id)
-            if os.path.isdir(dir) == False:
-                print("doesnt exist")
-                os.makedirs(dir, exist_ok=True)
-                UPLOAD_FOLDER = dir
+        # file = request.files['file']
+        # if file.filename == '':
+        #     print('No filename selected')
+        #     resp = jsonify({'message': 'No file selected for uploading'})
+        #     resp.status_code = 400
+        #     return resp
+        files = request.files.getlist('file')
+        # d = ImmutableMultiDict(files)
+        # files = dict(d.lists())
 
-            # filename = secure_filename(file.filename)
-            filename = file.filename
-            file.save(os.path.join(dir, filename))
-            resp = jsonify({'message': 'File successfully uploaded'})
-            resp.status_code = 201
-            return resp
-        else:
-            resp = jsonify(
-                {'message': 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
-            resp.status_code = 400
-            return resp
+        # print(request.files)
+        print(files)
+        # print(type(file))
+
+        for file in files:
+            if file and allowed_file(file.filename):
+                dir = os.path.join(os.path.dirname(__file__) +
+                                '/uploads/', currentuser.public_id)
+                # dir = os.path.join(os.path.dirname(__file__) +
+                #                 '/uploads/', "123")
+                if os.path.isdir(dir) == False:
+                    print("doesnt exist")
+                    os.makedirs(dir, exist_ok=True)
+                    UPLOAD_FOLDER = dir
+
+                # filename = secure_filename(file.filename)
+                filename = file.filename
+                file.save(os.path.join(dir, filename))
+            else:
+                resp = jsonify(
+                    {'message': 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
+                resp.status_code = 400
+                return resp
+        resp = jsonify({'message': 'File successfully uploaded'})
+        resp.status_code = 201
+        return resp
+        
     except Exception as err:
         print('An exception occured!!')
         print(err)
@@ -671,26 +684,6 @@ def get_user_pdf2(userPublicId, filename):
                     mimetype='application/json',
                 )
     return response
-
-
-@app.route('/textanonymizer', methods=['POST'])
-def text_anonymizer_post():
-    # input data in json format
-    input_json = request.json
-    # parse json data
-    d = input_json
-
-    # anonymize text
-    anonymized_text = text_anonymizer.anonymize(d['text'],
-                                                name_types=d['entities'],
-                                                fictional = d['fake_names'])
-    
-    # convert the output into a json file
-    response = json.dumps(anonymized_text)
-
-    # return the json file
-    return response
-
 
 @socketio.on('connect')
 def test_connect():
