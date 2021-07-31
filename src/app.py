@@ -30,11 +30,11 @@ import pandas as pd
 import numpy as np
 
 output_dir="./judgclsfymodel12"
-output_dir3="./core_law_md5"
+output_dir3="./cite_law_sm15"
 nlp = spacy.load(output_dir)
 nlp3=spacy.load(output_dir3)
 
-output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../core_law_md5"
+output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../cite_law_sm15"
 nlp3=spacy.load(output_dir2)
 
 Payload.max_decode_packets = 50
@@ -608,6 +608,8 @@ def get_user_pdf2(userPublicId, filename):
                     # doc2.cats.pop('ISSUE')
                     # doc2.cats.pop('OTHER')
                     # doc2.cats=total(doc2.cats)
+                    # doc.cats={k: v for k, v in doc.cats.items() if v < 1 and v > 0.73} #FILTERS DOC CATEGORIES BUT FRONTE WONT PRINT 
+
                     c = Counter(doc.cats)
                     most_common = c.most_common(1)  # returns top 3 pairs
                     # my_keys = [key for key, val in most_common]
@@ -657,27 +659,29 @@ def get_user_pdf2(userPublicId, filename):
         os.makedirs(graphDir, exist_ok=True)
     if filename in proccessed_data:
         newFile = { "highlights": proccessed_data[filename], "name": filename, "entities": entities }
-        print(len(labels))
-        print(len(entities))
-
+        print('THE NO. OF LABELS IN THIS PDF',len(labels))
+        print('THE NO. OF ENTITIES IN THIS PDF',len(entities))
         my_labels = ["CITATION", "CASENAME", "INSTRUMENT", "PROVISION","JUDGE","COURT"]
-        nodes = [{"id" : x} for x in (entities + my_labels)]
+        filenamelist = [filename,filename,filename,filename,filename,filename]
+        nodes = [{"id" : x} for x in (entities + my_labels )]
+        nodes2 = [{"id" : filename}  ]
+        nodes = (nodes+nodes2)
+        centerlabel = [{"source": filenamelist, "target": my_labels } for filenamelist, my_labels in zip(filenamelist, my_labels)]
+        # print(centerlabel)
         labels = [{"source": label, "target": target } for label, target in zip(labels, entities)]
-
+        labels = (labels+centerlabel)
+        print(type(entities))
         print(nodes)
         print(labels)
-
         graphData = {
                         "nodes": nodes,
                         "links": labels
                     }
-
     with open(join(graphDir, filename + '.json'), 'w') as graph_file:
         json.dump(graphData, graph_file)
 
     with open(filepath, 'w') as json_file:
         json.dump(newFile, json_file)
-    
     response = app.response_class(
                     response=json.dumps({ "highlights": newFile }),
                     status=200,
