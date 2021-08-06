@@ -521,7 +521,7 @@ def get_user_pdf2(userPublicId, filename):
     # retrieve body data from input JSON
     print(userPublicId)
     print(filename)
-
+    
     dir_path = join(os.path.dirname(__file__), 'uploads', userPublicId)
     filePath = dir_path + '/{}'.format(filename)
     print(filePath)
@@ -566,7 +566,11 @@ def get_user_pdf2(userPublicId, filename):
     counter = 0
     id_counter = 0
     proccessed_data = {}
-
+    provision_entities = []
+    labels = []
+    memory=  0 # memorize how many occurance it has seen.
+    prev_text =""
+    current_text=""
     pageSizesList = []
 
     entities = []
@@ -603,7 +607,7 @@ def get_user_pdf2(userPublicId, filename):
                 json_dump = []
                 # for sentence in sentences:
 
-                if len(text) > 43:
+                if len(text) > 5:
                     # doc2 = nlp(sentence)
                     # doc2.cats.pop('ISSUE')
                     # doc2.cats.pop('OTHER')
@@ -620,9 +624,11 @@ def get_user_pdf2(userPublicId, filename):
                         "comment": {
                             "emoji":"",
                             "text": most_common[0][0],
+                            "classifier_score":0
                         },
                         "content": {
                             "text": text,
+                            "entities":ents,
                         },
                         "id": str(id_counter),
                         "position": {
@@ -644,13 +650,25 @@ def get_user_pdf2(userPublicId, filename):
                                     "x2": x2,
                                     "y2": y2,
                                                "height":  page.mediabox[3], # get height of each page
-                                "width":  page.mediabox[2]# get width of each page
+                                "width":  page.mediabox[2],# get width of each page
+                                "opacity":0.3
                                 }
                             ]
                         }
                     }
                     arr = proccessed_data.setdefault(filename, [])
+                    current_text=jsont["comment"]["text"]
+                    # if len(arr)>0: 
+                        # check the prevous jsont
+                    if prev_text==current_text:
+                        memory+=0.3 # increment memory
+                    else:
+                        memory=0
+                    jsont["comment"]["classifier_score"]=(memory)
+                    prev_text = current_text
+                    current_text=""
                     arr.append(jsont)
+                
     newFile = {}
     graphData = {}
     graphDir = os.path.join(os.path.dirname(__file__) + '/graphData/' + userPublicId)    
