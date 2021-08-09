@@ -650,8 +650,8 @@ def get_user_pdf2(userPublicId, filename):
                                     "x2": x2,
                                     "y2": y2,
                                                "height":  page.mediabox[3], # get height of each page
-                                "width":  page.mediabox[2],# get width of each page
-                                "opacity":0.3
+                                "width":  page.mediabox[2]# get width of each page
+                               
                                 }
                             ]
                         }
@@ -661,8 +661,10 @@ def get_user_pdf2(userPublicId, filename):
                     # if len(arr)>0: 
                         # check the prevous jsont
                     if prev_text==current_text:
-                        memory+=0.3 # increment memory
-                    else:
+                        memory+=0.36 # increment memory
+                    elif prev_text!=current_text:
+                        memory=0.14
+                    elif current_text ==['OTHER']:
                         memory=0
                     jsont["comment"]["classifier_score"]=(memory)
                     prev_text = current_text
@@ -692,6 +694,7 @@ def get_user_pdf2(userPublicId, filename):
         print(nodes)
         print(labels)
         graphData = {
+                        "fileName":filename,
                         "nodes": nodes,
                         "links": labels
                     }
