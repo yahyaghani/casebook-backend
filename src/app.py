@@ -28,13 +28,14 @@ from collections import Counter
 from typing import Pattern 
 import pandas as pd
 import numpy as np
+import re 
 
 output_dir="./judgclsfymodel12"
-output_dir3="./cite_law_sm15"
+output_dir3="./cite_law_sm8"
 nlp = spacy.load(output_dir)
 nlp3=spacy.load(output_dir3)
 
-output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../cite_law_sm15"
+output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../cite_law_sm8"
 nlp3=spacy.load(output_dir2)
 
 Payload.max_decode_packets = 50
@@ -515,6 +516,17 @@ def get_top_cat(doc):
     max_cat = max_cats[0]
     return (max_cat, max_score)
 
+
+def textSegmentation(string):
+    indices = []
+    start_index=0
+    lst=re.finditer("\n[0-9.]+|\n\([0-9]+\)|^[0-9]+",string)
+    for itr in lst:
+        indices.append(itr.start(0))
+    parts = [string[i:j] for i,j in zip(indices, indices[1:]+[None])]
+    for part in parts:
+        print(part)
+
 @app.route('/highlights-json/<path:userPublicId>/<path:filename>', methods=['GET'])
 def get_user_pdf2(userPublicId, filename):
     """ get pdf file """
@@ -591,12 +603,15 @@ def get_user_pdf2(userPublicId, filename):
                 y2 = page.mediabox[3] - y0_orig
 
                 text = text.strip()
+                # textSegmentation(text)
+
                 doc = nlp(text)
                 #The Citation Classifier to build graph from
                 # doc3=nlp3(text)
 
                 doc3=nlp3(text)
                 ents = [(ent.text, ent.label_) for ent in doc3.ents ]
+
                 # testing output of classifier core_law_md5
                 print(ents)
                 for ent in doc3.ents:
@@ -661,11 +676,11 @@ def get_user_pdf2(userPublicId, filename):
                     # if len(arr)>0: 
                         # check the prevous jsont
                     if prev_text==current_text:
-                        memory+=0.36 # increment memory
+                        memory=0 # increment memory
                     elif prev_text!=current_text:
-                        memory=0.14
-                    elif current_text ==['OTHER']:
-                        memory=0
+                        memory=0.26
+                    # elif prev_text ==['OTHER']:
+                    #     memory=0
                     jsont["comment"]["classifier_score"]=(memory)
                     prev_text = current_text
                     current_text=""
@@ -681,8 +696,8 @@ def get_user_pdf2(userPublicId, filename):
         newFile = { "highlights": proccessed_data[filename], "name": filename, "entities": entities }
         print('THE NO. OF LABELS IN THIS PDF',len(labels))
         print('THE NO. OF ENTITIES IN THIS PDF',len(entities))
-        my_labels = ["CITATION", "CASENAME", "INSTRUMENT", "PROVISION","JUDGE","COURT"]
-        filenamelist = [filename,filename,filename,filename,filename,filename]
+        my_labels = ["CITATION", "CASENAME", "PROVISION","JUDGE","COURT"]
+        filenamelist = [filename,filename,filename,filename,filename]
         nodes = [{"id" : x} for x in (entities + my_labels )]
         nodes2 = [{"id" : filename}  ]
         nodes = (nodes+nodes2)
