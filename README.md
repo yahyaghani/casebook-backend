@@ -1,4 +1,4 @@
-# HIGHLIGHTBACK
+# This is the backend for the casebook ai - copilot for lawyers
 
 ## Prerequisites
 
