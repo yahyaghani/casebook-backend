@@ -23,21 +23,26 @@ import os
 # reset random seed generator
 random.seed(0)
 fileDir = os.path.dirname(os.path.abspath(__file__))
+file_path1 = os.path.join(fileDir, 'characters_hg2g.txt')
+file_path2= os.path.join(fileDir, 'fictional_races.txt')
+file_path3 = os.path.join(fileDir, 'fictional_organization.txt')
+file_path4 = os.path.join(fileDir, 'locations_hg2g.txt')
+file_path5 = os.path.join(fileDir, 'fictional_language.txt')
 
 
-with open(fileDir+'\\characters_hg2g.txt','r') as f:
+with open(file_path1,'r') as f:
     fictional_person = [x.strip() for x in f.readlines()]
 
-with open(fileDir+'\\fictional_races.txt','r') as f:
+with open(file_path2,'r') as f:
     fictional_norp = [x.strip() for x in f.readlines()]
 
-with open(fileDir+'\\fictional_organization.txt','r') as f:
+with open(file_path3,'r') as f:
     fictional_org = [x.strip() for x in f.readlines()]
 
-with open(fileDir+'\\locations_hg2g.txt','r') as f:
+with open(file_path4,'r') as f:
     fictional_gpe = [x.strip() for x in f.readlines()]
 
-with open(fileDir+'\\fictional_language.txt','r') as f:
+with open(file_path5,'r') as f:
     fictional_language = [x.strip() for x in f.readlines()]
 
 # list of all the names seen so far.

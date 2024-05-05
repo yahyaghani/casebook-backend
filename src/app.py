@@ -67,7 +67,7 @@ app = Flask(__name__)
 app.config['CORS_HEADERS'] = 'Content-Type'
 cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
-UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/uploads')
+UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static/uploads')
 app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -296,7 +296,7 @@ def upload_file(currentuser):
 
         for file in files:
             if file and allowed_file(file.filename):
-                dir = os.path.join(os.path.dirname(__file__) +
+                dir = os.path.join(os.path.dirname(__file__) +'/static' + 
                                    '/uploads/', currentuser.public_id)
                 # dir = os.path.join(os.path.dirname(__file__) +
                 #                 '/uploads/', "123")
@@ -327,14 +327,14 @@ def upload_file(currentuser):
 @token_required
 def get_user_files(currentuser):
     try:
-        dir = os.path.join(os.path.dirname(__file__) + '/uploads/', currentuser.public_id)
+        dir = os.path.join(os.path.dirname(__file__)+'/static'  + '/uploads/', currentuser.public_id)
         if os.path.isdir(dir) == False:
             print('No files found')
             resp = jsonify({'message': 'No files available for the user'})
             resp.status_code = 400
             return resp
         else:
-            userFiles = [{'name': f, 'url': join('uploads', currentuser.public_id, f)} for f in listdir(dir) if
+            userFiles = [{'name': f, 'url': join('static','uploads', currentuser.public_id, f)} for f in listdir(dir) if
                          isfile(join(dir, f))]
             resp = jsonify({'files': userFiles})
             resp.status_code = 201
@@ -350,7 +350,7 @@ def create_file_post(userPublicId, filename):
     try:
         print(userPublicId)
         print(filename)
-        dir_path = join(os.path.dirname(__file__), 'uploads', userPublicId)
+        dir_path = join(os.path.dirname(__file__),'static', 'uploads', userPublicId)
         filePath = dir_path + '/{}'.format(filename)
         print(filePath)
         if os.path.isfile(filePath) == False:
@@ -486,7 +486,7 @@ def save_user_highlights(currentuser):
     try:
         highlights = request.data
         highlights = json.loads(highlights)
-        dir = os.path.join(os.path.dirname(__file__) + '/highlights/' + currentuser.public_id)
+        dir = os.path.join(os.path.dirname(__file__) +'/static'  + '/highlights/' + currentuser.public_id)
         if os.path.isdir(dir) == False:
             print("doesnt exist")
             os.makedirs(dir, exist_ok=True)
@@ -513,7 +513,7 @@ def save_user_highlights(currentuser):
 @token_required
 def get_user_highlights(currentuser):
     try:
-        dir = os.path.join(os.path.dirname(__file__) + '/highlights/' + currentuser.public_id)
+        dir = os.path.join(os.path.dirname(__file__)+'/static'  + '/highlights/' + currentuser.public_id)
         if os.path.isdir(dir) == False:
             print("doesnt exist")
             os.makedirs(dir, exist_ok=True)
@@ -536,7 +536,7 @@ def get_user_highlights(currentuser):
 @token_required
 def get_user_graphdata(currentuser):
     try:
-        dir = os.path.join(os.path.dirname(__file__) + '/graphData/' + currentuser.public_id)
+        dir = os.path.join(os.path.dirname(__file__)+'/static' + '/graphData/' + currentuser.public_id)
         if os.path.isdir(dir) == False:
             print("doesnt exist")
             os.makedirs(dir, exist_ok=True)
@@ -561,7 +561,7 @@ def get_user_pdf(userPublicId, filename):
     # retrieve body data from input JSON
     print(userPublicId)
     print(filename)
-    dir_path = join(os.path.dirname(__file__), 'uploads', userPublicId)
+    dir_path = join(os.path.dirname(__file__), 'static','uploads', userPublicId)
     filePath = dir_path + '/{}'.format(filename)
     print(filePath)
     if os.path.isfile(filePath) == False:
@@ -654,7 +654,7 @@ def get_user_pdf2(userPublicId, filename):
     print(userPublicId)
     print(filename)
 
-    dir_path = join(os.path.dirname(__file__), 'uploads', userPublicId)
+    dir_path = join(os.path.dirname(__file__),'static', 'uploads', userPublicId)
     filePath = dir_path + '/{}'.format(filename)
     print(filePath)
 
@@ -664,7 +664,7 @@ def get_user_pdf2(userPublicId, filename):
         resp.status_code = 404
         return resp
 
-    dir = os.path.join(os.path.dirname(__file__) + '/highlights/' + userPublicId)
+    dir = os.path.join(os.path.dirname(__file__) +'/static'+ '/highlights/' + userPublicId)
     if os.path.isdir(dir) == False:
         print("doesnt exist")
         os.makedirs(dir, exist_ok=True)
@@ -824,7 +824,7 @@ def get_user_pdf2(userPublicId, filename):
 
     newFile = {}
     graphData = {}
-    graphDir = os.path.join(os.path.dirname(__file__) + '/graphData/' + userPublicId)
+    graphDir = os.path.join(os.path.dirname(__file__) + '/static'+ '/graphData/' + userPublicId)
     if os.path.isdir(graphDir) == False:
         print("doesnt exist")
         os.makedirs(graphDir, exist_ok=True)
@@ -864,7 +864,7 @@ def get_user_pdf2(userPublicId, filename):
         status=200,
         mimetype='application/json',
     )
-    notesDir = os.path.join(os.path.dirname(__file__), 'notes', userPublicId)
+    notesDir = os.path.join(os.path.dirname(__file__),'static', 'notes', userPublicId)
     if not os.path.isdir(notesDir):
         os.makedirs(notesDir, exist_ok=True)
     notesFilePath = os.path.join(notesDir, filename + '.json')
@@ -889,7 +889,7 @@ def handle_openai_call(data):
         response = responses["insights"][counter]
     else:
         # If filename not found, handle misc_call to retrieve the response
-        dir_path = os.path.join(os.path.dirname(__file__), 'notes', documentId)
+        dir_path = os.path.join(os.path.dirname(__file__),'static', 'notes', documentId)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path, exist_ok=True)
         if not os.path.isdir(dir_path):
@@ -923,7 +923,7 @@ def handle_openai_call_query(data):
     fileName = data['filename']
     query=data['query']
     content=data['content']
-    dir_path = os.path.join(os.path.dirname(__file__), 'notes', documentId)
+    dir_path = os.path.join(os.path.dirname(__file__), 'static','notes', documentId)
     if not os.path.isdir(dir_path):
         os.makedirs(dir_path, exist_ok=True)
     if not os.path.isdir(dir_path):
@@ -999,7 +999,7 @@ def handle_openai_call_rec(data):
         response = responses["insights"][counter]
     else:
         # If filename not found, handle misc_call to retrieve the response
-        dir_path = os.path.join(os.path.dirname(__file__), 'notes', documentId)
+        dir_path = os.path.join(os.path.dirname(__file__),'static', 'notes', documentId)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path, exist_ok=True)
         if not os.path.isdir(dir_path):
@@ -1033,7 +1033,7 @@ def handle_openai_caselaw_call(data):
         response = responses["caselaw"][counter]
     else:
         # If filename not found, handle misc_call to retrieve the response
-        dir_path = os.path.join(os.path.dirname(__file__), 'notes', documentId)
+        dir_path = os.path.join(os.path.dirname(__file__),'static', 'notes', documentId)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path, exist_ok=True)
         if not os.path.isdir(dir_path):
@@ -1067,7 +1067,7 @@ def handle_openai_clause_call(data):
         response = responses["caselaw"][counter]
     else:
         # If filename not found, handle misc_call to retrieve the response
-        dir_path = os.path.join(os.path.dirname(__file__), 'notes', documentId)
+        dir_path = os.path.join(os.path.dirname(__file__),'static', 'notes', documentId)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path, exist_ok=True)
         if not os.path.isdir(dir_path):
@@ -1106,7 +1106,7 @@ def test_connect():
             fileName = info['fileName']
             print(info)
             
-            dir_path = os.path.join(os.path.dirname(__file__), 'notes', documentId)
+            dir_path = os.path.join(os.path.dirname(__file__),'static', 'notes', documentId)
             if not os.path.isdir(dir_path):
                 os.makedirs(dir_path, exist_ok=True)
             
