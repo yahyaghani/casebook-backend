@@ -17,12 +17,17 @@ import re
 from typing import Pattern 
 import pandas as pd
 
+## custom models##
+# output_dir= os.path.dirname(os.path.realpath(__file__)) + "/../../judgclsfymodel8"
+# output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../../core_law_md5"
 
-output_dir= os.path.dirname(os.path.realpath(__file__)) + "/../../judgclsfymodel8"
-output_dir2= os.path.dirname(os.path.realpath(__file__)) + "/../../core_law_md5"
+# nlp = spacy.load(output_dir)
+# nlp3=spacy.load(output_dir2)
 
-nlp = spacy.load(output_dir)
-nlp3=spacy.load(output_dir2)
+##blackstone model##
+
+nlp = spacy.load("en_blackstone_proto")
+nlp3 = nlp
 
 bp_api = Blueprint(name="pdf_api", import_name=__name__)
 

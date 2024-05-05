@@ -1,8 +1,8 @@
-# This is the backend for the casebook ai - copilot for lawyers
+# HIGHLIGHTBACK
 
 ## Prerequisites
 
-- python >=3.6
+- python >=3.0.0
 - venv/virtualenv >= 20.4.6
 
 ## Installation of dependencies

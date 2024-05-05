@@ -35,13 +35,22 @@ SQLAlchemy==1.4.15
 toml==0.10.2
 urllib3==1.26.4
 Werkzeug==2.0.1
-Spacy==2.3
+# Spacy==2.3.2
 Pdfminer
 gunicorn
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.1.0/en_core_web_sm-2.1.0.tar.gz
 flask_migrate
 pyJWT==1.7.1
 Werkzeug==2.0.1
-Spacy==2.3
 Pdfminer
-uWSGI==2.0.19.1
+pandas
+torch
+pytorch-transformers
+tensorflow
+python-dotenv
+neo4j
+blackstone
+https://blackstone-model.s3-eu-west-1.amazonaws.com/en_blackstone_proto-0.0.1.tar.gz
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.1.0/en_core_web_sm-2.1.0.tar.gz
+gevent-websocket
+openai
+backoff

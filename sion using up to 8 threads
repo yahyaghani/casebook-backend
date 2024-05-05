@@ -1,0 +1,591 @@
+[33mcommit a7ba68878255a73ac4ed2a81c19fd75556d2481a[m[33m ([m[1;36mHEAD -> [m[1;32mbackend_joining_highlighter_with_llm[m[33m)[m
+Author: taymur <apatewp@gmail.com>
+Date:   Sun May 5 21:22:59 2024 +0100
+
+    v2-transition-to-langchain-and-holistic-gen-ai
+
+[33mcommit 4b1f3530afaebb5a357f2db32c259d3822237af8[m
+Author: taymur <apatewp@gmail.com>
+Date:   Sun May 5 21:20:44 2024 +0100
+
+    v2-transition-to-langchain-and-holistic-gen-ai
+
+[33mcommit e00aa52bafb21e9d3d5c8783f48ec81ec0209ef0[m
+Author: taymur <apatewp@gmail.com>
+Date:   Sun May 5 21:18:01 2024 +0100
+
+    v2-transition-to-langchain-and-holistic-gen-ai
+
+[33mcommit f618b06a5c5cc9d6368ec456eebb5f682bc63fc8[m
+Author: taymur <apatewp@gmail.com>
+Date:   Sun May 5 21:11:45 2024 +0100
+
+    v2-transition-to-langchain-and-holistic-gen-ai
+
+[33mcommit 83f913118201a22e6e71cc3ddab0f7fe640bf62a[m
+Author: taymur <apatewp@gmail.com>
+Date:   Tue Apr 9 23:50:01 2024 +0100
+
+    preparing2.0_backend
+
+[33mcommit 4914f48e07df6f38b68d05b507ab0dfec998ae17[m
+Author: taymur <apatewp@gmail.com>
+Date:   Tue Apr 9 23:48:32 2024 +0100
+
+    preparing2.0_backend
+
+[33mcommit 2d759a2e94fc5f22c7cfa66dddd799a420a8319b[m
+Author: taymur <apatewp@gmail.com>
+Date:   Mon Apr 8 00:40:37 2024 +0100
+
+    updating_apis
+
+[33mcommit 081798ab040225d443528c1c1ac3a6f40a8463ac[m[33m ([m[1;32mmain[m[33m)[m
+Author: taymur <apatewp@gmail.com>
+Date:   Mon Apr 8 00:36:56 2024 +0100
+
+    updating_apis
+
+[33mcommit f15285a01b4fa9d9ad29dc41fc228f7d6fd4a2ad[m
+Author: taymur <apatewp@gmail.com>
+Date:   Thu Dec 23 11:01:56 2021 +0000
+
+    latest
+
+[33mcommit 31c68f035fd6ddaf2c94cec2daaa670960d597e1[m
+Author: taymur <apatewp@gmail.com>
+Date:   Sat Dec 18 04:35:08 2021 +0000
+
+    deploy
+
+[33mcommit 4449210fc3ff2e16ec86275641918bf23e2bdbde[m
+Author: taymur <apatewp@gmail.com>
+Date:   Mon Aug 9 04:17:09 2021 +0100
+
+    graph filename
+
+[33mcommit 6243de2856037d01bbf7f6f0b796f7ddd2a73f8a[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri Aug 6 03:41:47 2021 +0100
+
+    classifier_score
+
+[33mcommit b345d2d8301102e5a4ffd23baf532da736b44bf8[m
+Author: taymur <apatewp@gmail.com>
+Date:   Sat Jul 31 06:35:47 2021 +0100
+
+    fixed graphbackend nodes
+
+[33mcommit 38ffbb04309aff74d5ad19779afeff1e1671314f[m
+Merge: 5d3627a 52cec07
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Sun Jul 25 00:08:13 2021 +0100
+
+    Merge pull request #14 from dzynin/feature/multi-_upload_file
+    
+    feat:-multi upload file feature
+
+[33mcommit 52cec07ceb910b9dbe5e87d32d42870e90927e33[m
+Author: jaydip <jaydip@mobifyi.com>
+Date:   Sat Jul 24 22:33:43 2021 +0530
+
+    feat:-multi upload file feature
+
+[33mcommit 5d3627a4cd0368bd14978930f67e45a068cd1cf5[m
+Merge: ae61c84 b24a604
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Fri Jul 23 23:24:31 2021 +0100
+
+    Merge pull request #13 from dzynin/textanon
+    
+    Textanon
+
+[33mcommit b24a60445ccb1945edc2cb698496b33b328d0c1f[m
+Merge: 9fe8fda ae61c84
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Fri Jul 23 23:24:22 2021 +0100
+
+    Merge branch 'main' into textanon
+
+[33mcommit ae61c841ea8df87671d1004f504271ce3af6c54f[m
+Merge: f3a6cf3 5ddc458
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Wed Jul 21 10:23:37 2021 +0100
+
+    Merge pull request #12 from dzynin/feature-modify-graph-data-format
+    
+    Feature modify graph data format
+
+[33mcommit 5ddc4587bef3c99a0084ce4dc26be263657111d7[m
+Author: Mohit Nagpal <nagpalm7@gmail.com>
+Date:   Wed Jul 21 01:11:57 2021 +0530
+
+    Change format for graphData
+
+[33mcommit d8149a26b52d06d1b26295b0fb035e1bd10419f5[m
+Author: Mohit Nagpal <nagpalm7@gmail.com>
+Date:   Wed Jul 21 01:02:24 2021 +0530
+
+    Change format for graphData
+
+[33mcommit 8215861787c4697a58cb30ab39c74f3ac9bd552b[m
+Author: Mohit Nagpal <nagpalm7@gmail.com>
+Date:   Wed Jul 21 00:59:03 2021 +0530
+
+    Change format for graphData
+
+[33mcommit f3a6cf30eca7b8f85fdad0b81f9d1a522af9f8b0[m
+Author: taymur <apatewp@gmail.com>
+Date:   Tue Jul 20 12:32:24 2021 +0100
+
+    fixing PdfGraphFunc
+
+[33mcommit 14e29a869563115f4a3c087ef4384ae91e1178a6[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Mon Jul 19 19:10:10 2021 +0530
+
+    updated for graph api
+
+[33mcommit cec1a7a35abe2034b5a582c4bc06803065576e1a[m
+Merge: 84556be 55ec438
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Fri Jul 16 20:00:08 2021 +0530
+
+    Merge branch 'main' of https://github.com/dzynin/highlightback
+
+[33mcommit 84556be69b1a83dc87694da5254867822f10753a[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Fri Jul 16 19:55:05 2021 +0530
+
+    updated endpoint to get entities
+
+[33mcommit 55ec43807a54012f2e97c8cacf69c32bb15e9dd1[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri Jul 16 15:12:21 2021 +0100
+
+    fixed backend for citation classifier
+
+[33mcommit c92f3d296e4531f9be6981986f025c7403f71462[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri Jul 16 15:10:12 2021 +0100
+
+    fixed backend for citation classifier
+
+[33mcommit 93abee7418347f16cbe1057bc8e16b810dea1813[m
+Author: taymur <apatewp@gmail.com>
+Date:   Thu Jul 15 19:13:14 2021 +0100
+
+    added model for graph creation
+
+[33mcommit d621a7d52244ddb27e47b5b8a344ea80c8d4a789[m
+Merge: 19ac155 93abee7
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Thu Jul 15 23:39:48 2021 +0530
+
+    Merge branch 'main' of https://github.com/dzynin/highlightback
+
+[33mcommit 19ac1555658d2a7be1627d49d3bc32c8a509e62c[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Thu Jul 15 23:38:51 2021 +0530
+
+    updated notes api
+
+[33mcommit 3db9fc767da228e5c189f7cd65d73235ed3f5b60[m
+Author: taymur <apatewp@gmail.com>
+Date:   Thu Jul 15 18:25:24 2021 +0100
+
+    fixed dependencies
+
+[33mcommit acfc2dd14713da1b76ebccbdebc2bcf21c504ceb[m
+Author: taymur <apatewp@gmail.com>
+Date:   Thu Jul 15 18:24:07 2021 +0100
+
+    fixed dependencies
+
+[33mcommit 9fe8fda4eaf6cecd369c54827022d499cb7e3d7e[m
+Author: georgeheshmet <georgeheshmet1@gmail.com>
+Date:   Thu Jun 24 00:58:21 2021 +0200
+
+    changing the way text_anonymizer file is imported to fit all OS requirements
+
+[33mcommit 759343a4911820b123c3b60aebd0a9d31cd9137a[m
+Author: georgeheshmet <georgeheshmet1@gmail.com>
+Date:   Thu Jun 24 00:46:01 2021 +0200
+
+    changing the way text_anonymizer file is imported to fit all OS requirements
+
+[33mcommit d00282bef5d1d4ef6e46f055bc4b1f9e20681fe4[m
+Author: georgeheshmet <georgeheshmet1@gmail.com>
+Date:   Thu Jun 24 00:09:26 2021 +0200
+
+    changing the way text_anonymizer file is imported to fit all OS requirements
+
+[33mcommit 20972ed2ed5862249c6eff7286ef0278e84cb079[m
+Author: georgeheshmet <georgeheshmet1@gmail.com>
+Date:   Wed Jun 23 23:35:43 2021 +0200
+
+    adding text anonymizer package, added  "/textanonymizer" post route, added needed requirements in requirements.txt
+
+[33mcommit d9c997fda5756ea834781d373a47fbbd7644db39[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri Jun 18 23:41:21 2021 +0100
+
+    height n width
+
+[33mcommit 244ee728c93e09fef366a4ff12380a3e9e659ef1[m
+Merge: 85e9fa4 43bda99
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Thu Jun 17 19:27:31 2021 +0100
+
+    Merge pull request #10 from dzynin/graphapi
+    
+    update graph nodes shape
+
+[33mcommit 85e9fa44f422c1cbed80d8001be11f3f4203c064[m
+Merge: 42c5dc0 bc6aa50
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Thu Jun 17 15:06:52 2021 +0100
+
+    Merge pull request #8 from dzynin/graphapi
+    
+    fet/ add graphapi
+
+[33mcommit 42c5dc06cd5527c1ff0687e4413a7a8cf0c69353[m
+Merge: 7984646 f035cc7
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Thu Jun 17 15:06:14 2021 +0100
+
+    Merge pull request #9 from dzynin/userApi
+    
+    User api
+
+[33mcommit 43bda9912b91236e050ce3e2a93936a511a0869a[m
+Author: mohamedfarid <mhmdmedo820@gmail.com>
+Date:   Wed Jun 16 18:52:40 2021 +0200
+
+    update graph nodes shape
+
+[33mcommit bc6aa50a9533833f4c270eba54ec69be6d5349f3[m
+Author: mohamedfarid <mhmdmedo820@gmail.com>
+Date:   Wed Jun 16 17:39:19 2021 +0200
+
+    enhance the graph data response format
+
+[33mcommit f035cc7c16c4e9ffc354fa6ecdf01a54cb6d0cc0[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Tue Jun 15 21:24:33 2021 +0530
+
+    updated
+
+[33mcommit 458cfe3d985ac4bc210afdde9571c5fdbcf37446[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Tue Jun 15 21:24:11 2021 +0530
+
+    updated changes for user profile and posts
+
+[33mcommit aa63a66e482c34456e0af9b548107db77d5c7a5f[m
+Author: mohamedfarid <mhmdmedo820@gmail.com>
+Date:   Sun Jun 13 00:43:16 2021 +0200
+
+    edit graph api response format
+
+[33mcommit 3b980b1b9224f60998ef191cd5b9d56412769a1c[m
+Author: mohamedfarid <mhmdmedo820@gmail.com>
+Date:   Fri Jun 11 22:41:26 2021 +0200
+
+    fet/ make graph nodes clickable
+
+[33mcommit 8d44472258ee9e503d0c72662f2954e75d712e31[m
+Author: mohamedfarid <mhmdmedo820@gmail.com>
+Date:   Fri Jun 11 20:04:43 2021 +0200
+
+    fet/ add graphapi
+
+[33mcommit 79846468d297901f8059e28593891b7536eb2d7a[m
+Merge: 80f844a a0d076f
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Mon Jun 7 21:14:33 2021 +0100
+
+    Merge pull request #6 from dzynin/MLAPI
+    
+    Mlapi
+
+[33mcommit a0d076f36b30e8632fc69a44b5cbd6430f4ef286[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Sun Jun 6 01:21:19 2021 +0530
+
+    added seperate files for highlights of a user
+
+[33mcommit f7232139b01f124f5a231d78eaad74ec1f986b5f[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Sat Jun 5 03:43:07 2021 +0530
+
+    fixed issue for no file exists
+
+[33mcommit 27065e12804ca2c87916725ad24e55e0b986c89d[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Sat Jun 5 02:42:38 2021 +0530
+
+    updated highlights-json api
+
+[33mcommit 733d1a87b6c36f7bdda6e02a0424271c379d3390[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri Jun 4 20:02:07 2021 +0100
+
+    added ML folder
+
+[33mcommit d8be82362a3f454493c0c3c37c2969ddf1b130b9[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri Jun 4 19:01:11 2021 +0100
+
+    trying to integrate MLhighlight API
+
+[33mcommit 80f844a2e631e5696628074dac188554adcc7233[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Thu May 27 10:52:07 2021 +0530
+
+    updated
+
+[33mcommit 851fdfe942b5bb1d06588f69140698da2ebf4c53[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Wed May 26 12:53:49 2021 +0530
+
+    added notes and get uploaded files for user
+
+[33mcommit 05c87d0897c6936ce8bd47d92f52e92605deabff[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Wed May 26 00:55:13 2021 +0530
+
+    fixed errors in auth and file upload apis
+
+[33mcommit e8ef61089c29675e7da8284d47cd6206cdc0a5fc[m
+Merge: c64d52b 740fef6
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Sun May 23 23:58:49 2021 +0100
+
+    Merge pull request #5 from dzynin/jwtauth
+    
+    Jwtauth
+
+[33mcommit 740fef6d96ba7364ef1dcc114dabf48a6c7fa49a[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Sat May 22 14:49:47 2021 -0400
+
+    Update filesystem
+
+[33mcommit b85b23289ee80a3f2d4fef7fa69ef87252bbfa76[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Sat May 22 13:45:30 2021 -0400
+
+    Update
+
+[33mcommit b3e83bef18b229ce7cd98cc2c71e17e5f89df1fa[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Sat May 22 13:45:01 2021 -0400
+
+    Add upload file function
+
+[33mcommit 8fa340f683d93dabbd5adbbb5ca6cc1acd04bbce[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Sat May 22 12:38:20 2021 -0400
+
+    add file functionality
+
+[33mcommit 340ce8ab9d7b9bd30e267ffb8e5320a15894419c[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Sat May 22 08:01:50 2021 -0400
+
+    Fix username problem
+
+[33mcommit 1c84682a1a065e33adcebaef3e30c6fbaa8ec067[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Sat May 22 08:00:11 2021 -0400
+
+    Create Jwt Auth Functionality
+
+[33mcommit c64d52bae2a9ad07642ab3b8e312977cfbd44f7a[m
+Merge: bf3721b a34b85a
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 22:53:50 2021 -0400
+
+    Merge branch 'fixes/management' into main
+
+[33mcommit a34b85aede46e01c3d641d52d1513d16655a8b29[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 22:49:20 2021 -0400
+
+    Remove unused packages
+
+[33mcommit bf3721b239d1ed44e7466bc776124142472bee01[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri May 21 22:22:41 2021 +0100
+
+    checking saugats changes
+
+[33mcommit 7205fa2a11a6348719107023c82bd0ba49b48cc2[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri May 21 22:10:09 2021 +0100
+
+    checking saugats changes
+
+[33mcommit 812c60f2f5526e9c2413de87b4cb81ce831d5ca6[m
+Author: taymur <apatewp@gmail.com>
+Date:   Fri May 21 22:05:14 2021 +0100
+
+    checking saugats changes
+
+[33mcommit 5947d35f4fd99f36aabb3f07085e4fcca85ed7ce[m
+Merge: 8b41b16 f0964af
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Fri May 21 21:27:54 2021 +0100
+
+    Merge pull request #4 from dzynin/fixes/management
+    
+    Fixes/management
+
+[33mcommit f0964afb2370519f7e4b43334fea827a98551d0d[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 10:14:30 2021 -0400
+
+    Fix endpoints issue
+
+[33mcommit c31981ad513775aa5db570f0a97a0b80c99fc463[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 10:13:23 2021 -0400
+
+    Update importa
+
+[33mcommit 797c3a94767292e000d04191c44acdd452dad6f0[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 10:10:57 2021 -0400
+
+    Update dir structure
+
+[33mcommit afc750f0e62f37b7351e9c1fcd9fba3a98f19dd8[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 10:07:32 2021 -0400
+
+    Reformat files
+
+[33mcommit e86367697ee40bcbf6c68f7b90b4cce5fc95edcd[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 10:04:49 2021 -0400
+
+    Update dir structure
+
+[33mcommit 954f58082b7b504048de03578747933a446d643f[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 09:59:00 2021 -0400
+
+    Update gitignore
+
+[33mcommit c890171f400d85d1aa06a4ddc0202fb0d71fde18[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 09:57:41 2021 -0400
+
+    update readme
+
+[33mcommit 14b8c349103691d49c5f7e0b9d5d1855f6c18528[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 09:52:56 2021 -0400
+
+    Update gitignore
+
+[33mcommit a3ec7009af2851459c555b6feb02fe13db3280f0[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 09:50:36 2021 -0400
+
+    Add gitignore
+
+[33mcommit 73e965afa306ddae0300d72ed90739d2f6d137c5[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 09:49:30 2021 -0400
+
+    Code Refactoring
+
+[33mcommit fb46862bc60e40b9fede61eb48e40ec8c385f009[m
+Author: gitsaugat <letnotsay@gmail.com>
+Date:   Fri May 21 09:27:12 2021 -0400
+
+    Update requirements.txt
+
+[33mcommit 8b41b1643b6987fffa202f880b911f5561ea4ab1[m
+Merge: 2f0af85 f998c6c
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Sat May 15 11:21:14 2021 +0100
+
+    Merge pull request #3 from dzynin/revert-1-login-api
+    
+    Revert "This adds login api and authentication "
+
+[33mcommit f998c6cc7f439a08e7be40ba931e54208f9c45a7[m
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Sat May 15 11:20:17 2021 +0100
+
+    Revert "This adds login api and authentication "
+
+[33mcommit 2f0af85afb7316d3bb36818046a7c3cce3a82888[m
+Merge: 15f2d13 8e402aa
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Sat May 15 10:59:28 2021 +0100
+
+    Merge pull request #1 from dzynin/login-api
+    
+    This adds login api and authentication
+
+[33mcommit 15f2d130dd1cc11495ef929f7a7d6da23cc018eb[m
+Merge: bab80a2 d59d7a2
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Sat May 15 10:55:32 2021 +0100
+
+    Merge pull request #2 from dzynin/socketConn
+    
+    added socket implementation
+
+[33mcommit d59d7a27853827531ae574b8092419e921e66513[m
+Author: BhuwanChandra <bhuwan7779@gmail.com>
+Date:   Sat May 15 00:54:52 2021 +0530
+
+    added socket implementation
+
+[33mcommit 8e402aad461e6f503901a2f35d6778f162c2ed30[m
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Thu May 13 14:18:49 2021 +0100
+
+    Create README.md
+
+[33mcommit bab80a237d8da7543d6e54581a6c772ec113463f[m
+Author: dzynin <59755224+dzynin@users.noreply.github.com>
+Date:   Thu May 13 14:18:49 2021 +0100
+
+    Create README.md
+
+[33mcommit 0cc4172d4542763fb403ea3478bfea8f9679ab49[m
+Author: taymur <apatewp@gmail.com>
+Date:   Thu May 13 13:36:43 2021 +0100
+
+    first commit
+
+[33mcommit 279c8eeab613be867c9420c7799c5db387f5e232[m
+Author: taymur <apatewp@gmail.com>
+Date:   Thu May 13 13:00:28 2021 +0100
+
+    back
+
+[33mcommit e7c638d84acfdc035b3238c1a069c962a1c9fc13[m
+Author: Matthias <mdoering@mpi-inf.mpg.de>
+Date:   Sat Jul 25 18:38:05 2020 +0200
+
+    update docs
+
+[33mcommit 26d249d78da0f05ee7515252bf7d0d425e449ad0[m
+Author: Matthias <mdoering@mpi-inf.mpg.de>
+Date:   Fri Jul 24 22:09:35 2020 +0200
+
+    basic flask app
+
+[33mcommit 9845462319a2b37abb74f0f43cdf8f52d0f74465[m
+Author: matdoering <matthias-doering@gmx.de>
+Date:   Fri Jul 24 21:34:47 2020 +0200
+
+    Initial commit
