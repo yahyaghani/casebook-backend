@@ -5,7 +5,7 @@ from langchain_google_community import GoogleSearchAPIWrapper
 ##dynamic search based on the type of doc
 
 # Base environment variables for API access
-os.environ["GOOGLE_API_KEY"] = "AIzaSyDeLCirQ-L0kALHBzv6hrSbyUvgLR7njug"
+api_key = os.getenv('GOOGLE_API_KEY')
 
 # Mapping of document types to their respective Google Custom Search Engine IDs
 CSE_IDS = {
