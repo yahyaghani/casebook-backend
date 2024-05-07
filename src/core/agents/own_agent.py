@@ -57,7 +57,7 @@ def query(question, max_turns=4):
     while i < max_turns:
         i += 1
         result = bot(next_prompt)
-        print(result)
+        print('result from next iteration of bot',result)
         actions = [action_re.match(a) for a in result.split('\n') if action_re.match(a)]
         
         if actions:
@@ -67,7 +67,7 @@ def query(question, max_turns=4):
             print(f" -- running {action} {action_input}")
             # Execute the action
             observation = known_actions[action](action_input)
-            print("Observation:", observation)
+            print("Observation after actions:", observation)
             # Update the prompt with the observation to move out of PAUSE
             next_prompt = f"Observation: {observation}"
         else:
@@ -76,8 +76,8 @@ def query(question, max_turns=4):
                 last_action, last_input = extract_last_action(result)
                 if last_action and last_input:
                     observation = known_actions[last_action](last_input)
-                    print("Observation:", observation)
-                    next_prompt = f"Observation: {observation}"
+                    print("Observation after PAUSE:", observation)
+                    next_prompt = f"Observation: {observation}, I must remember the user's query  :{question}"
                 continue
             return
         
