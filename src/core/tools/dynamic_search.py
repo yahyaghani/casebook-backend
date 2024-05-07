@@ -38,11 +38,11 @@ def google_search(query: str, document_type: str, k: int = 5) -> str:
     result_str = "\n".join([f"Title: {item['title']}, Link: {item['link']}" for item in results])
     return result_str
 
-# Example usage
-if __name__ == "__main__":
-    query = "Fourth Amendment"
-    print("Caselaw Search Results:")
-    print(google_search(query, document_type="caselaw", k=3))
-    print("\nLegislation Search Results:")
-    query = "data protection act"
-    print(google_search(query, document_type="legislation", k=3))
+# # Example usage
+# if __name__ == "__main__":
+#     query = "Fourth Amendment"
+#     print("Caselaw Search Results:")
+#     print(google_search(query, document_type="caselaw", k=3))
+#     print("\nLegislation Search Results:")
+#     query = "data protection act"
+#     print(google_search(query, document_type="legislation", k=3))

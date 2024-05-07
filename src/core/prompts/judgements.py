@@ -8,7 +8,7 @@ from langchain_chroma import Chroma
 # Revised examples for legal contexts
 examples = [
     {
-        "question": "Can the verdict of a breach of contract be appealed?",
+        "sample_question": "Can the verdict of a breach of contract be appealed?",
         "answer": """
 Are follow up questions needed here: Yes.
 Follow up: On what grounds was the original verdict based?
@@ -19,7 +19,7 @@ So the final answer is: Yes, if errors in procedure or legal interpretation can 
 """,
     },
     {
-        "question": "What are possible defenses in a defamation lawsuit?",
+        "sample_question": "What are possible defenses in a defamation lawsuit?",
         "answer": """
 Are follow up questions needed here: Yes.
 Follow up: Was the statement claimed as defamation factual or opinion?
@@ -32,7 +32,7 @@ So the final answer is: Defenses include truth, opinion, and lack of malice, par
 """,
     },
     {
-        "question": "How can a judgment in a patent infringement case be challenged?",
+        "sample_question": "How can a judgment in a patent infringement case be challenged?",
         "answer": """
 Are follow up questions needed here: Yes.
 Follow up: Was the patent's validity assessed considering prior art?
@@ -45,7 +45,7 @@ So the final answer is: The judgment can be challenged based on new evidence of 
 """,
     },
 {
-    "question": "Under what circumstances can a criminal conviction be overturned on appeal?",
+    "sample_question": "Under what circumstances can a criminal conviction be overturned on appeal?",
     "answer": """
     Are follow up questions needed here: Yes.
     Follow up: Was there any prosecutorial misconduct during the trial?
@@ -56,7 +56,7 @@ So the final answer is: The judgment can be challenged based on new evidence of 
     """
 },
 {
-    "question": "What are the grounds for appealing a civil litigation ruling regarding a property dispute?",
+    "sample_question": "What are the grounds for appealing a civil litigation ruling regarding a property dispute?",
     "answer": """
     Are follow up questions needed here: Yes.
     Follow up: Were all factual disputes properly resolved by the jury?
@@ -67,7 +67,7 @@ So the final answer is: The judgment can be challenged based on new evidence of 
     """
 },
 {
-    "question": "What legal remedies are available if a contract is breached by one party?",
+    "sample_question": "What legal remedies are available if a contract is breached by one party?",
     "answer": """
     Are follow up questions needed here: Yes.
     Follow up: What was the nature of the breach?
@@ -82,40 +82,40 @@ So the final answer is: The judgment can be challenged based on new evidence of 
 ]
 
 
-
-
-
 ##### the code below will be utilised for calling the appropriate prompt samples to be similarity matched
 
 
-
-# Create prompt templates
-example_prompt = PromptTemplate(
-    input_variables=["question", "answer"], 
-    template="Question: {question}\n{answer}"
-)
-
-prompt = FewShotPromptTemplate(
-    examples=examples,
-    example_prompt=example_prompt,
-    suffix="Question: {input}",
-    input_variables=["input"]
-)
-
-# Example selector setup
-example_selector = SemanticSimilarityExampleSelector.from_examples(
-    examples,
-    OpenAIEmbeddings(),
-    Chroma,
-    k=1
-)
-
-# Select the most similar example to the input
 question = "What are the legal requirements for filing a personal injury claim?"
-selected_examples = example_selector.select_examples({"question": question})
 
-# Display selected examples
-for example in selected_examples:
-    print("\n")
-    for k, v in example.items():
-        print(f"{k}: {v}")
+def call_prompt_example_generator(user_question):
+
+    # Create prompt templates
+    example_prompt = PromptTemplate(
+        input_variables=["sample_question", "answer"], 
+        template="Sample question: {sample_question}\n{answer}"
+    )
+
+    # Example selector setup
+    example_selector = SemanticSimilarityExampleSelector.from_examples(
+        examples,
+        OpenAIEmbeddings(),
+        Chroma,
+        k=1
+    )
+
+    # Select the most similar example to the input
+    selected_examples = example_selector.select_examples({"question": user_question})
+    # Display selected examples
+    final_prompt = FewShotPromptTemplate(
+    example_selector=example_selector,
+    example_prompt=example_prompt,
+    suffix="User's Question is: {input}",
+    input_variables=["input"],
+)
+    print(final_prompt.format(input=user_question))
+
+
+    return final_prompt
+
+
+example_prompt=call_prompt_example_generator(question)
