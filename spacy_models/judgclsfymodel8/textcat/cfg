@@ -1,0 +1,9 @@
+{
+  "labels":[
+    "ISSUE",
+    "CONCLUSION",
+    "LEGAL TEST",
+    "OTHER"
+  ],
+  "pretrained_vectors":null
+}
