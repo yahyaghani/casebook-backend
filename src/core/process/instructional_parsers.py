@@ -5,7 +5,7 @@ import json
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def openai_create_golfer_profile(parsing_string):
+def openai_structured_response_return_title_url(parsing_string):
 
     prompt=f"""you excel at parsing the string into a json,here is a string: {parsing_string}, can you provide the json for this
     use title and url as the fields.
@@ -36,4 +36,4 @@ def openai_create_golfer_profile(parsing_string):
 
 # string="'Speech by The Right Hon. The Lord Burnett of Maldon: The Age of Algorithms and Artificial Intelligence', 'https://www.bailii.org/bailii/lecture/2018/BAILII_Lecture_2018.pdf'"
 
-# openai_create_golfer_profile(string)
+# openai_structured_response_return_title_url(string)
