@@ -2,12 +2,15 @@ from openai import OpenAI
 import re
 import httpx
 import os 
-from src.core.process.helpers_web_parse_cleaner import clean_html,tfidf_extract_keywords,convert_spaces_to_percent20,perform_google_search,perform_google_search_legislation,fetch_and_clean_url_content,read_stored_articles,smart_parse_action_input
+from src.core.process.helpers_web_parse_cleaner import clean_html,tfidf_extract_keywords,convert_spaces_to_percent20,perform_google_search,perform_google_search_legislation,fetch_and_clean_url_content,smart_parse_action_input
 from src.core.tools.g_search import GoogleSearchAPIWrapper
 from src.core.test_tool_customsearch import agent_executor
 from bs4 import BeautifulSoup
-from src.core.prompts.search_prompt import prompt
+from src.core.prompts.search_prompt import search_sample
 from src.db.chroma_model import query_articles,fetch_and_store_content_chromadb
+# from app import socketio  # Import the socketio instance
+# from src.extensions import socketio
+# from flask_socketio import emit
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -29,7 +32,6 @@ def extract_last_action(text):
     return None, None
 
 
-
 class SearchAgent:
     def __init__(self, system=""):
         self.system = system
@@ -46,19 +48,26 @@ class SearchAgent:
     def execute(self):
         completion = client.chat.completions.create(model="gpt-3.5-turbo-0125", messages=self.messages,
                                                     temperature=0.5)
+        
+        
         # Uncomment this to print out token usage each time, e.g.
         # {"completion_tokens": 86, "prompt_tokens": 26, "total_tokens": 112}
         # print(completion.usage)
         return completion.choices[0].message.content
 
-def query(question, max_turns=4):
+def handle_chat_query(question, max_turns=4):
     i = 0
-    bot = SearchAgent(prompt)
+    bot = SearchAgent(search_sample)
     next_prompt = question
     while i < max_turns:
         i += 1
         result = bot(next_prompt)
         print('result from next iteration of bot',result)
+        # Emit answer if it exists in the response
+        for line in result.split('\n'):
+            if line.startswith("Answer:"):
+                socketio.emit('openai-query-response', {'recommendation': line[7:]})  # Emit only the text after 'Answer:'
+            
         actions = [action_re.match(a) for a in result.split('\n') if action_re.match(a)]
         
         if actions:
@@ -83,7 +92,7 @@ def query(question, max_turns=4):
             return
         
 
-# Test the improved function with a complex input
+# # Test the improved function with a complex input
 # query("What is the legislation on AI in the UK?")
 
         
