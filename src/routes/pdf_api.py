@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, make_response
-from src.endpoints.data import json_data, graph_data, search_data
+from src.endpoints.frontend_data_schemas import json_data, graph_data, search_data
 from flask import send_file
 import json
 import os

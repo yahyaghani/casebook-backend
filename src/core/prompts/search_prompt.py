@@ -76,7 +76,7 @@ In France, a major social media company was fined €50 million for not adequate
 import re 
 
 
-prompt = """
+search_sample = """
 I operate in a cycle of Thought, Action, PAUSE, and Observation, concluding with an Answer.
 Each cycle begins with a Thought, where I ponder the legal query posed to me.
 Next, I undertake an Action, accessing one of the available legal databases or computational tools to gather data pertinent to the query, then you pause.

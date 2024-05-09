@@ -4,8 +4,10 @@ from openai import OpenAI
 import json
 import backoff
 import spacy
+import os 
 
 
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
 def get_rec(instruction,page):

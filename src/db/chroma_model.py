@@ -8,6 +8,9 @@ from src.core.process.helpers_web_parse_cleaner import (
 )
 from src.core.process.embeddings import get_embedding
 from chromadb.utils import embedding_functions
+from src.core.process.instructional_parsers import (
+    smart_parse_action_input,openai_structured_response_return_title_url)
+
 
 # Setup OpenAI embedding function
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -17,6 +20,8 @@ openai_ef = embedding_functions.OpenAIEmbeddingFunction(api_key=OPENAI_API_KEY, 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 db_dir = os.path.join(current_dir, "chromadb_data")
 os.makedirs(db_dir, exist_ok=True)
+
+
 
 def get_or_create_collection(client, collection_name, embedding_function):
     try:
@@ -45,10 +50,12 @@ def split_into_chunks(text, max_length=8000):
 
     return chunks
 
-def fetch_and_store_content_chromadb(actioned_input, collection):
+def fetch_and_store_content_chromadb(actioned_input):
     print('Fetching and storing content for:', actioned_input)
-    title = actioned_input['title']
-    url = actioned_input['url']
+    actioned_input_dict = openai_structured_response_return_title_url(actioned_input)
+    print("Parsed result from smart_parse_action_input", actioned_input_dict)
+    title = actioned_input_dict['title']
+    url = actioned_input_dict['url']
 
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
@@ -59,9 +66,14 @@ def fetch_and_store_content_chromadb(actioned_input, collection):
         cleaned_text = extract_text_from_pdf(response.content) if 'application/pdf' in content_type else extract_text_from_html(response.text)
         chunks = split_into_chunks(cleaned_text)
 
+        existing_ids = set(doc['id'] for doc in collection.get(ids=[f"{title.replace(' ', '_')}_{url}_chunk_{i+1}" for i in range(len(chunks))]))
+        
         for i, chunk in enumerate(chunks):
-            # Store each chunk as a separate document
             doc_id = f"{title.replace(' ', '_')}_{url}_chunk_{i+1}"
+            if doc_id in existing_ids:
+                print(f"Skipping existing document ID: {doc_id}")
+                continue
+
             collection.add(
                 documents=[chunk],
                 metadatas=[{"title": title, "url": url, "chunk": i+1, "total_chunks": len(chunks)}],
@@ -71,12 +83,12 @@ def fetch_and_store_content_chromadb(actioned_input, collection):
     except Exception as e:
         print(f"Error processing content: {e}")
 
-def query_articles(query, collection):
+def query_articles(query):
     print('Querying articles for:', query)
     query_embeddings = get_embedding(query)  # Assuming this function returns the proper embeddings
     results = collection.query(
         query_embeddings=query_embeddings,
-        n_results=3,
+        n_results=1,
         include=["documents", "metadatas"]  # Request both documents and metadata to be returned
     )
 
@@ -93,15 +105,11 @@ def query_articles(query, collection):
             chunk = metadata.get('chunk', 'N/A')
             total_chunks = metadata.get('total_chunks', 'N/A')
             print(f"Title: {title}, URL: {url}, Chunk: {chunk}/{total_chunks}")
-            print("Content:", document)  # Print the actual content of the chunk
-
+            # print("Content:", document)  # Print the actual content of the chunk
+            return title,url,document
     else:
         print("No matching articles found.")
 
-# Main operations
-chroma_client = chromadb.PersistentClient(path=db_dir)
-collection, created = get_or_create_collection(chroma_client, "web_content", openai_ef)
-print("Collection initialized:", created)
 
 # Define and process documents
 sample_documents = [
@@ -117,6 +125,15 @@ sample_documents = [
     }
 ]
 
+
+
+# Main operations
+chroma_client = chromadb.PersistentClient(path=db_dir)
+collection, created = get_or_create_collection(chroma_client, "web_content", openai_ef)
+print("Collection initialized:", created)
+
+
+####################
 ## fetch from web ##
 # for doc in sample_documents:
 #     fetch_and_store_content_chromadb(doc, collection)

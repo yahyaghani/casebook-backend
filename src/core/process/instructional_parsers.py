@@ -2,8 +2,25 @@
 from openai import OpenAI
 import os 
 import json 
+import re
+
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+def smart_parse_action_input(action_input):
+    """
+    Parse the action input string into a dictionary by searching for key='value' pairs.
+    Handles multiple pairs in a string.
+    """
+    args = {}
+    # Regex to find key='value' patterns
+    matches = re.finditer(r"(\w+)='([^']*)'", action_input)
+    for match in matches:
+        key, value = match.groups()
+        args[key] = value
+    return args
+
 
 def openai_structured_response_return_title_url(parsing_string):
 
@@ -17,7 +34,7 @@ def openai_structured_response_return_title_url(parsing_string):
         max_tokens=1350,
         n=1,
         stop=None,
-        temperature=0.9,
+        temperature=0.1,
     )
     # print(response)
     answer_json_string=(response.model_dump_json(indent=2))

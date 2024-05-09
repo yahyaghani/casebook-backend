@@ -7,7 +7,6 @@ from src.routes.pdf_api import bp_api
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.inspection import inspect
 from flask_migrate import Migrate
-from flask_socketio import SocketIO, emit
 from engineio.payload import Payload
 from flask_cors import CORS, cross_origin
 from src.utils import check_password_and_generate_hash, check_password
@@ -41,8 +40,11 @@ from neo4j import GraphDatabase, basic_auth
 import openai
 from src.openai_funcs import * 
 from src.entity_parse import *
-
-
+# from src.extensions import socketio_instance
+from flask_socketio import emit,SocketIO,join_room
+from src.core.agents.custom_chat_search_agent import *
+from src.core.prompts.search_prompt import search_sample
+from flask import session
 
 dotenv_path = join(dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
@@ -72,30 +74,31 @@ app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+socketio_instance = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
+
+
 # DATABASE_URL = os.environ.get('HIGHLIGHT_DATABASE_URL')
 # DATABASE_USERNAME = os.environ.get('HIGHLIGHT_DATABASE_USERNAME')
 # DATABASE_PASSWORD = os.environ.get('HIGHLIGHT_DATABASE_PASSWORD')
 # driver = GraphDatabase.driver(uri=DATABASE_URL, auth=basic_auth(DATABASE_USERNAME, DATABASE_PASSWORD))
 
-uri = "neo4j+s://051aed9a.databases.neo4j.io:7687"
-username = "neo4j"
-password = "1Ok-ILv1z4Ele9OLE8Hk9F9rDKuggp7Lr_IAjXZsvkk"
-
-driver = GraphDatabase.driver(uri, auth=(username, password))
+# uri = "neo4j+s://051aed9a.databases.neo4j.io:7687"
+# username = "neo4j"
+# password = "1Ok-ILv1z4Ele9OLE8Hk9F9rDKuggp7Lr_IAjXZsvkk"
+# driver = GraphDatabase.driver(uri, auth=(username, password))
 
 
 
 db = SQLAlchemy(app)
 
 migrate = Migrate(app, db)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
 
 citation_regex = r"((?:PLD|SCMR|CLC|PCrLJ|PTD|PLC|CLD|YLR|GBLR|AIR|AC|Q\.B|PCr\.LJ|MLD|P Cr\. L J|ER|KB|Lloyd’s Rep|SCC|F\.R\.D|F\.3d)\s\d{4}\s(?:[^\d]+)?\d{1,3}|\d{4}\s(?:PLD|SCMR|CLC|PCrLJ|PTD|PLC|CLD|YLR|GBLR|AIR|AC|Q\.B|PCr\.LJ|MLD|P Cr\. L J|ER|KB|Lloyd’s Rep|SCC|F\.R\.D|F\.3d)\s(?:[^\d]+)?\d{1,4})"
 
-def get_db():
-    if not hasattr(g, 'neo4j_db'):
-        g.neo4j_db = driver.session()
-        return g.neo4j_db
+# def get_db():
+#     if not hasattr(g, 'neo4j_db'):
+#         g.neo4j_db = driver.session()
+#         return g.neo4j_db
 
 
 @app.teardown_appcontext
@@ -875,7 +878,10 @@ def get_user_pdf2(userPublicId, filename):
     print('done processing file')
     return response
 
-@socketio.on('openai_appeal_call')
+
+###socket calls for dynamic content###
+
+@socketio_instance.on('openai_appeal_call')
 def handle_openai_call(data):
     ## this is the appeal call ##
     print("Received appeal openai_call with data:", data)
@@ -912,7 +918,7 @@ def handle_openai_call(data):
 
 
 
-@socketio.on('openai-query')
+@socketio_instance.on('openai-query')
 def handle_openai_call_query(data):
     ## this is the appeal call ##
     print("Received openai-query with data:", data)
@@ -987,7 +993,7 @@ filename_to_responses = {
 }
 
 
-@socketio.on('openai-get-recommendation')
+@socketio_instance.on('openai-get-recommendation')
 def handle_openai_call_rec(data):
     documentId = data['documentId']
     filename = data['filename']
@@ -1021,7 +1027,7 @@ def handle_openai_call_rec(data):
 
 
 
-@socketio.on('openai-get-caselaw')
+@socketio_instance.on('openai-get-caselaw')
 def handle_openai_caselaw_call(data):
     documentId = data['documentId']
     filename = data['filename']
@@ -1055,7 +1061,7 @@ def handle_openai_caselaw_call(data):
     emit('openai-caselaw', {'recommendation': response})
 
 
-@socketio.on('openai-get-clause')
+@socketio_instance.on('openai-get-clause')
 def handle_openai_clause_call(data):
     documentId = data['documentId']
     filename = data['filename']
@@ -1089,13 +1095,59 @@ def handle_openai_clause_call(data):
     emit('openai-clause', {'recommendation': response})
 
 
-@socketio.on('connect')
+
+@socketio_instance.on('openai-chat')
+def handle_openai_chat(data):
+    print('incoming data',data)
+    print(type(data))
+    # chat_data = data[1]  # This will access the dictionary
+    question = data['query']
+    # question=chat_data['query']
+    handle_chat_query(question)
+    max_turns=4
+    i = 0
+    bot = SearchAgent(search_sample)
+    next_prompt = question
+    while i < max_turns:
+        i += 1
+        result = bot(next_prompt)
+        print('result from next iteration of bot',result)
+        # Emit answer if it exists in the response
+        for line in result.split('\n'):
+            if line.startswith("Answer:"):
+                socketio_instance.emit('openai-query-response', {'recommendation': line[7:]})  # Emit only the text after 'Answer:'
+            
+        actions = [action_re.match(a) for a in result.split('\n') if action_re.match(a)]
+        
+        if actions:
+            action, action_input = actions[0].groups()
+            if action not in known_actions:
+                raise Exception(f"Unknown action: {action}: {action_input}")
+            print(f" -- running {action} {action_input}")
+            # Execute the action
+            observation = known_actions[action](action_input)
+            print("Observation after actions:", observation)
+            # Update the prompt with the observation to move out of PAUSE
+            next_prompt = f"Observation: {observation}"
+        else:
+            if "PAUSE" in result:
+                # If in PAUSE, move to perform the action
+                last_action, last_input = extract_last_action(result)
+                if last_action and last_input:
+                    observation = known_actions[last_action](last_input)
+                    print("Observation after PAUSE:", observation)
+                    next_prompt = f"Observation: {observation}, I must remember the user's query  :{question}"
+                continue
+            return
+
+
+@socketio_instance.on('connect')
 def test_connect():
-    print('Connection is on!!')
+    session['sid'] = request.sid
+    print(f"New connection: {request.sid}")
 
-  
 
-    @socketio.on('get-document')
+    @socketio_instance.on('get-document')
     def getDocumentId(info):
         try:
             # Check if info is already a dictionary
@@ -1126,11 +1178,11 @@ def test_connect():
                 with open(filepath, 'w') as outfile:
                     json.dump({'data': {'ops': []}}, outfile)
                     emit('document-loaded', {'data': {'ops': []}})
-            @socketio.on('send-changes')
+            @socketio_instance.on('send-changes')
             def sendChanges(delta):
                 emit('receive-changes', delta, broadcast=True, include_self=False)
 
-            @socketio.on('save-document')
+            @socketio_instance.on('save-document')
             def saveData(data):
                 if os.path.isfile(filepath):
                     with open(filepath, 'r') as json_file:
@@ -1146,7 +1198,7 @@ def test_connect():
                 with open(filepath, 'w') as json_file:
                     json.dump(existing_data, json_file)
 
-            @socketio.on('disconnect')
+            @socketio_instance.on('disconnect')
             def disconnect():
                 print('disconnected!')
         except Exception as err:
@@ -1155,7 +1207,7 @@ def test_connect():
             return 'Something went wrong!!'
 
 
-
+## Old Custom Trained GPT2 Model
 def interact_model(    
     model_name='contracts_model',
     seed=None,

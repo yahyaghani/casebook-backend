@@ -5,7 +5,7 @@
 ####################
 # from src.app import app
 from src.app import app
-from src.app import socketio  # Import socketio instance
+from src.app import socketio_instance  # Import socketio instance
 
 # No need for app.run() here; Gunicorn will serve the app
 
