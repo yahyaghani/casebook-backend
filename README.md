@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- python >=3.0.0
+- python >=3.6
 - venv/virtualenv >= 20.4.6
 
 ## Installation of dependencies
@@ -14,5 +14,5 @@ pip install -r requirements.txt
 ## Running the app
 
 ```sh
-python wsgi.py
+./guni_run.sh
 ```
