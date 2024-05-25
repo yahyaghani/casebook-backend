@@ -9,19 +9,19 @@ from src.core.process.helpers_web_parse_cleaner import (
 from src.core.process.embeddings import get_embedding
 from chromadb.utils import embedding_functions
 from src.core.process.instructional_parsers import (
-    smart_parse_action_input,openai_structured_response_return_title_url)
-
+    smart_parse_action_input, openai_structured_response_return_title_url)
+from src.core.agents.main_client import client
 
 # Setup OpenAI embedding function
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+api_key="sk-test-1-EVd45S4JPy7m0zpf6rLTT3BlbkFJpUkAAFT6ClLo2njFl1RJ"
+
+OPENAI_API_KEY = api_key
 openai_ef = embedding_functions.OpenAIEmbeddingFunction(api_key=OPENAI_API_KEY, model_name="text-embedding-ada-002")
 
 # Setup directories for database storage
 current_dir = os.path.dirname(os.path.abspath(__file__))
 db_dir = os.path.join(current_dir, "chromadb_data")
 os.makedirs(db_dir, exist_ok=True)
-
-
 
 def get_or_create_collection(client, collection_name, embedding_function):
     try:
@@ -65,10 +65,21 @@ def fetch_and_store_content_chromadb(actioned_input):
         content_type = response.headers.get('Content-Type')
         cleaned_text = extract_text_from_pdf(response.content) if 'application/pdf' in content_type else extract_text_from_html(response.text)
         chunks = split_into_chunks(cleaned_text)
+        print("Chunks created:", len(chunks))
 
-        existing_ids = set(doc['id'] for doc in collection.get(ids=[f"{title.replace(' ', '_')}_{url}_chunk_{i+1}" for i in range(len(chunks))]))
-        
-        for i, chunk in enumerate(chunks):
+        # Generate embeddings for each chunk
+        embeddings = [get_embedding(chunk) for chunk in chunks]
+
+        # Debugging: Print the response from collection.get
+        ids_to_check = [f"{title.replace(' ', '_')}_{url}_chunk_{i+1}" for i in range(len(chunks))]
+        existing_ids_response = collection.get(ids=ids_to_check)
+        print("Existing IDs Response:", existing_ids_response)
+
+        # Extract the 'id' values correctly based on the actual structure of existing_ids_response
+        existing_ids = set(doc['id'] for doc in existing_ids_response['documents'])  # Adjust based on actual response structure
+        print("Existing IDs:", existing_ids)
+
+        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
             doc_id = f"{title.replace(' ', '_')}_{url}_chunk_{i+1}"
             if doc_id in existing_ids:
                 print(f"Skipping existing document ID: {doc_id}")
@@ -77,7 +88,8 @@ def fetch_and_store_content_chromadb(actioned_input):
             collection.add(
                 documents=[chunk],
                 metadatas=[{"title": title, "url": url, "chunk": i+1, "total_chunks": len(chunks)}],
-                ids=[doc_id]
+                ids=[doc_id],
+                embeddings=[embedding]
             )
             print(f"Content chunk {i+1}/{len(chunks)} stored with ID: {doc_id}")
     except Exception as e:
@@ -106,10 +118,10 @@ def query_articles(query):
             total_chunks = metadata.get('total_chunks', 'N/A')
             print(f"Title: {title}, URL: {url}, Chunk: {chunk}/{total_chunks}")
             # print("Content:", document)  # Print the actual content of the chunk
-            return title,url,document
+            return title, url, document
     else:
         print("No matching articles found.")
-
+        return None, None, None
 
 # Define and process documents
 sample_documents = [
@@ -125,19 +137,7 @@ sample_documents = [
     }
 ]
 
-
-
 # Main operations
 chroma_client = chromadb.PersistentClient(path=db_dir)
 collection, created = get_or_create_collection(chroma_client, "web_content", openai_ef)
 print("Collection initialized:", created)
-
-
-####################
-## fetch from web ##
-# for doc in sample_documents:
-#     fetch_and_store_content_chromadb(doc, collection)
-
-# Query the collection
-# query_text = "computational models"
-# query_articles(query_text, collection)

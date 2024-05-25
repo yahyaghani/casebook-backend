@@ -7,12 +7,7 @@ from src.core.process.helpers_web_parse_cleaner import (
     convert_spaces_to_percent20, perform_google_search, perform_google_search_legislation,
     fetch_and_clean_url_content
 )
-from src.core.tools.g_search import GoogleSearchAPIWrapper
-from src.core.test_tool_customsearch import agent_executor
-from bs4 import BeautifulSoup
-from src.core.prompts.search_prompt import prompt
 from src.db.chroma_model import query_articles, fetch_and_store_content_chromadb
-from src.core.process.instructional_parsers import smart_parse_action_input
 # Assuming OpenAI and other imports are correctly set
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
