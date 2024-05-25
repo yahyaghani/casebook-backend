@@ -3,16 +3,14 @@ import re
 import httpx
 import os 
 from src.core.process.helpers_web_parse_cleaner import clean_html,tfidf_extract_keywords,convert_spaces_to_percent20,perform_google_search,perform_google_search_legislation,fetch_and_clean_url_content,smart_parse_action_input
-from src.core.tools.g_search import GoogleSearchAPIWrapper
-from src.core.test_tool_customsearch import agent_executor
-from bs4 import BeautifulSoup
 from src.core.prompts.search_prompt import search_sample
 from src.db.chroma_model import query_articles,fetch_and_store_content_chromadb
 # from app import socketio  # Import the socketio instance
 # from src.extensions import socketio
 # from flask_socketio import emit
+from src.core.agents.main_client import client
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 known_actions = {
     "legislation_search":  perform_google_search_legislation, 

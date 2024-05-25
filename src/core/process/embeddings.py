@@ -1,5 +1,6 @@
-from openai import OpenAI
-client = OpenAI()
+# from openai import OpenAI
+# client = OpenAI()
+from src.core.agents.main_client import client
 
 def get_embedding(text, model="text-embedding-3-small"):
    text = text.replace("\n", " ")

@@ -1,12 +1,15 @@
 
-from openai import OpenAI
+import openai
 import os 
 import json 
 import re
+from src.core.agents.main_client import client
 
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# openai.api_key = "sk-test-1-EVd45S4JPy7m0zpf6rLTT3BlbkFJpUkAAFT6ClLo2njFl1RJ"
 
+# client()
 
 def smart_parse_action_input(action_input):
     """
