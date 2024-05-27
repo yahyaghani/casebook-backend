@@ -5,9 +5,15 @@ import os
 import requests
 import sqlite3
 import re
+import json 
+
+
 from src.core.process.instructional_parsers import openai_structured_response_return_title_url
 from pdfminer.high_level import extract_text
 from src.core.process.instructional_parsers import smart_parse_action_input
+from src.core.process.pydantic_models import GoogleSearchArguments, GoogleSearchResults, GoogleSearchResultItem
+from src.core.agents.main_client import client
+
 
 
 my_api_key = os.getenv('GOOGLE_API_KEY')
@@ -98,107 +104,83 @@ def legislation_search(q):
         return "No detailed legislation documents found."
 
 
-def perform_google_search_legislation(query: str, page: int = 1):
-    """
-    Performs a Google Custom Search and prints the results.
-
-    Args:
-    query (str): The search query.
-    page (int): The page number of the search results to retrieve.
-
-    Returns:
-    None: This function directly prints the results.
-    """
-    # Retrieve API key and search engine ID from environment variables
-    API_KEY = os.getenv('GOOGLE_API_KEY')
-    SEARCH_ENGINE_ID = '754370c1b456c454f'
-
-    # Calculate the start index for the results on the specified page
-    start = (page - 1) * 3 + 1
-
-    # Construct the API request URL
-    url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start={start}&num=3"
-
-    # Make the API request
-    response = requests.get(url)
-    if response.status_code != 200:
-        print(f"Failed to fetch data: HTTP {response.status_code}")
-        return
+def perform_google_search(arguments: GoogleSearchArguments) -> GoogleSearchResults:
+    query = arguments.query
+    page = arguments.page
     
-    # Parse the JSON response
-    data = response.json()
-
-    # Get the result items
-    search_items = data.get("items")
-    if not search_items:
-        print("No results found.")
-        return
-    results = []
-
-     # Iterate over the results found
-    for i, search_item in enumerate(search_items, start=1):
-        # Extract data from each result
-        result_dict = {
-            "result_number": i + start - 1,
-            "title": search_item.get("title"),
-            "description": search_item.get("snippet"),
-            "long_description": search_item.get("pagemap", {}).get("metatags", [{}])[0].get("og:description", "N/A"),
-            "url": search_item.get("link")
-        }
-        results.append(result_dict)
-
-    return {"results": results}
-
-def perform_google_search(query: str, page: int = 1):
-    """
-    Performs a Google Custom Search and prints the results.
-
-    Args:
-    query (str): The search query.
-    page (int): The page number of the search results to retrieve.
-
-    Returns:
-    None: This function directly prints the results.
-    """
-    # Retrieve API key and search engine ID from environment variables
     API_KEY = os.getenv('GOOGLE_API_KEY')
     SEARCH_ENGINE_ID = 'b2f924e8393114947'
 
-    # Calculate the start index for the results on the specified page
     start = (page - 1) * 3 + 1
-
-    # Construct the API request URL
     url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start={start}&num=3"
 
-    # Make the API request
     response = requests.get(url)
     if response.status_code != 200:
-        print(f"Failed to fetch data: HTTP {response.status_code}")
-        return
-    
-    # Parse the JSON response
-    data = response.json()
+        raise ValueError(f"Failed to fetch data: HTTP {response.status_code}")
 
-    # Get the result items
+    # Log the response content
+    print(f"Response content: {response.text}")
+
+    try:
+        data = response.json()
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse JSON: {str(e)}")
+
     search_items = data.get("items")
     if not search_items:
-        print("No results found.")
-        return
-    results = []
+        raise ValueError("No results found.")
 
-     # Iterate over the results found
+    results = []
     for i, search_item in enumerate(search_items, start=1):
-        # Extract data from each result
-        result_dict = {
-            "result_number": i + start - 1,
-            "title": search_item.get("title"),
-            "description": search_item.get("snippet"),
-            "long_description": search_item.get("pagemap", {}).get("metatags", [{}])[0].get("og:description", "N/A"),
-            "url": search_item.get("link")
-        }
+        result_dict = GoogleSearchResultItem(
+            result_number=i + start - 1,
+            title=search_item.get("title"),
+            description=search_item.get("snippet"),
+            long_description=search_item.get("pagemap", {}).get("metatags", [{}])[0].get("og:description", "N/A"),
+            url=search_item.get("link")
+        )
         results.append(result_dict)
 
-    return {"results": results}
+    return GoogleSearchResults(results=results)
+
+def perform_google_search_legislation(arguments: GoogleSearchArguments) -> GoogleSearchResults:
+    query = arguments.query
+    page = arguments.page
+    
+    API_KEY = os.getenv('GOOGLE_API_KEY')
+    SEARCH_ENGINE_ID = '754370c1b456c454f'
+
+    start = (page - 1) * 3 + 1
+    url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start={start}&num=3"
+
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise ValueError(f"Failed to fetch data: HTTP {response.status_code}")
+
+    # Log the response content
+    print(f"Response content: {response.text}")
+
+    try:
+        data = response.json()
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse JSON: {str(e)}")
+
+    search_items = data.get("items")
+    if not search_items:
+        raise ValueError("No results found.")
+
+    results = []
+    for i, search_item in enumerate(search_items, start=1):
+        result_dict = GoogleSearchResultItem(
+            result_number=i + start - 1,
+            title=search_item.get("title"),
+            description=search_item.get("snippet"),
+            long_description=search_item.get("pagemap", {}).get("metatags", [{}])[0].get("og:description", "N/A"),
+            url=search_item.get("link")
+        )
+        results.append(result_dict)
+
+    return GoogleSearchResults(results=results)
 
 def extract_text_from_html(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -251,3 +233,26 @@ def fetch_and_clean_url_content(actioned_input):
     except Exception as e:
         return f"An error occurred: {e}"
 
+
+def parse_structure(function_name: str, attempted_data: dict, error: str) -> dict:
+    messages = [
+        {"role": "system", "content": "You are a structure correction assistant. Your job is to correct the structure of the provided data based on the validation error."},
+        {"role": "user", "content": f"The function '{function_name}' received the following data: {json.dumps(attempted_data)} and encountered the following error: {error}. Please correct the structure of the data and provide only the corrected JSON object without any additional text."}
+    ]
+    
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo-1106",
+        messages=messages,
+        temperature=0.2,
+    )
+    
+    response_content = response.choices[0].message.content.strip()
+    print(f"Response content from OpenAI (parse_structure): {response_content}")  # Debugging statement
+    
+    try:
+        corrected_structure = json.loads(response_content)
+    except json.JSONDecodeError as e:
+        print(f"JSONDecodeError in parse_structure: {str(e)}")  # Log the error
+        corrected_structure = attempted_data  # Fallback to attempted_data
+    
+    return corrected_structure

@@ -33,20 +33,21 @@ This tool allows me to retrieve articles from my searches to gather context abou
 
 My Chain of Reasoning follows this general pattern, i am free to try move my reasoning around this general pattern within limits :-
 
-Thought:What do i need to do tackle this question?
-
-Action: If It's a general question I can answer it now, If I have very little upto date information , I should use the tools available
-
+Thought:Do I need to search or retrieve context to answer this query?
+Action: I have very little upto date information on data protection, I should use the tools available
 PAUSE
-
-Observation: Did i retrieve any relevant content, if so lets use it for context for user's original query; otherwise best to keep on try something else unless I run out of options.
-
+Observation: Did i retrieve any relevant content, if so lets store it using one of the tools, otherwise best to keep on try and refine my search.
 Thought: The search did not yield specific cases. I will now try and create a list of keywords to try and use to get relevant contextual information.
+Action: I rephrase the original keywords into a new list of keywords, and try the tools again.
+PAUSE
+Continue this cycle untill I Observe I have enough resources.
+Observation: Let's fetch the stored articles and use them for contextual answering of the user's original query.
+Thought: I need to recall the user's query to provide to the retrieval tools. 
+Action: I now answer with detailed context and citations:The search has returned detailed cases from Germany, France, and Spain where significant GDPR fines were imposed. These include a €50 million fine in France against a major social media company for failing to properly disclose data usage to users.
+Answer: Several high-profile GDPR penalty cases have been recorded in the EU:
+In France, a major social media company was fined €50 million for not adequately informing users about data usage
 
-etc..
-
-
-
+....
 """.strip()
 
 

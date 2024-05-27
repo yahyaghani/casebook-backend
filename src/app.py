@@ -41,10 +41,11 @@ import openai
 from src.openai_funcs import * 
 from src.entity_parse import *
 # from src.extensions import socketio_instance
-from flask_socketio import emit,SocketIO,join_room
-from src.core.agents.custom_chat_search_agent import *
+# from flask_socketio import emit,SocketIO,join_room
 from src.core.prompts.search_prompt import search_sample
+from src.core.agents.open_agent import process_user_instruction
 from flask import session
+from src.socketio_instance import socketio_instance  # Import from the new module
 
 dotenv_path = join(dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
@@ -74,7 +75,8 @@ app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-socketio_instance = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
+# socketio_instance = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
+socketio_instance.init_app(app)
 
 
 # DATABASE_URL = os.environ.get('HIGHLIGHT_DATABASE_URL')
@@ -251,7 +253,7 @@ def login_user():
 
         if check_password_hash(user.password, auth['password']):
             token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
-            ) + timedelta(minutes=30)}, app.config['SECRET_KEY'])
+            ) + timedelta(hours=24)}, app.config['SECRET_KEY'])
 
             return jsonify({'auth_token': token.decode('UTF-8'), 'userId': user.id, 'userPublicId': user.public_id,
                             'username': user.username, 'email': user.email,
@@ -1096,12 +1098,22 @@ def handle_openai_clause_call(data):
 
 
 
-@socketio_instance.on('openai-chat')
-def handle_openai_chat(data):
+@socketio_instance.on('openai-chat-no-filter-search-agent')
+def handle_openai_chat_total_search_agent(data):
     print('incoming data',data)
     print(type(data))
     # chat_data = data[1]  # This will access the dictionary
-    question = data['query']
+    query = data['query']
+    
+    query_id = query['id']
+    nick_name = query['nickName']
+    message_type = query['type']
+    question = query['message']  # renaming message to question
+    # print(f'ID: {query_id}')
+    # print(f'Nick Name: {nick_name}')
+    # print(f'Type: {message_type}')
+    # print(f'Question: {question}')
+
     # question=chat_data['query']
     handle_chat_query(question)
     max_turns=4
@@ -1118,7 +1130,7 @@ def handle_openai_chat(data):
                 socketio_instance.emit('openai-query-response', {'recommendation': line[7:]})  # Emit only the text after 'Answer:'
             
         actions = [action_re.match(a) for a in result.split('\n') if action_re.match(a)]
-        
+        print('actions',actions)
         if actions:
             action, action_input = actions[0].groups()
             if action not in known_actions:
@@ -1140,6 +1152,21 @@ def handle_openai_chat(data):
                 continue
             return
 
+
+@socketio_instance.on('openai-chat')
+def handle_openai_chat(data):
+    print('incoming data:', data)
+    print(type(data))
+    
+    query = data['query']
+    
+    query_id = query['id']
+    nick_name = query['nickName']
+    message_type = query['type']
+    question = query['message']  # renaming message to question
+
+    
+    res_summary, messages = process_user_instruction(question)
 
 @socketio_instance.on('connect')
 def test_connect():
