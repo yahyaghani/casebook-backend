@@ -22,6 +22,7 @@ openai_ef = embedding_functions.OpenAIEmbeddingFunction(api_key=OPENAI_API_KEY, 
 # Setup directories for database storage
 current_dir = os.path.dirname(os.path.abspath(__file__))
 db_dir = os.path.join(current_dir, "chromadb_data")
+print('dir',db_dir)
 os.makedirs(db_dir, exist_ok=True)
 
 def get_or_create_collection(client, collection_name, embedding_function):
@@ -35,7 +36,7 @@ def get_or_create_collection(client, collection_name, embedding_function):
         print(f"Collection {collection_name} created successfully.")
     return collection, created
 
-def split_into_chunks(text, max_length=8000):
+def split_into_chunks(text, max_length=3000):
     words = text.split()
     chunks = []
     current_chunk = []
@@ -69,6 +70,7 @@ def fetch_and_store_content_chromadb(arguments: ChromadbArguments, instruction: 
             top_3_chunks = query_articles(instruction)
             return {"message": "URL already exists in the database, fetched top 3 closest chunks.", "top_3_chunks": top_3_chunks}
 
+        # Fetch and process content from the URL
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -88,10 +90,9 @@ def fetch_and_store_content_chromadb(arguments: ChromadbArguments, instruction: 
                 embeddings=[embedding]
             )
 
-        # Return the top 3 chunks with their embeddings
-        top_3_chunks = [{"chunk": chunk, "embedding": embedding} for chunk, embedding in zip(chunks[:3], embeddings[:3])]
-        print('top_3_chunks', top_3_chunks)
-        return {"message": "Content fetched and stored successfully.", "top_3_chunks": top_3_chunks}
+        # After storing, query for the top 3 chunks based on the instruction
+        top_3_chunks = query_articles(instruction)
+        return {"message": "Content fetched and stored successfully, fetched top 3 closest chunks.", "top_3_chunks": top_3_chunks}
     except Exception as e:
         raise ValueError(f"Error processing content: {e}")
 
@@ -99,15 +100,15 @@ def query_articles(query: str) -> list:
     print('incoming query articles', query)
     query_embeddings = get_embedding(query)
     results = collection.query(
-        query_embeddings=query_embeddings,
+        query_embeddings=[query_embeddings],
         n_results=3,
-        include=["documents", "metadatas"]
+        include=["documents", "metadatas","embeddings"]
     )
 
     if results and 'metadatas' in results and 'documents' in results:
         metadatas = results['metadatas'][0]
         documents = results['documents'][0]
-
+        print('results', results)
         top_3_chunks = []
         for metadata, document in zip(metadatas, documents):
             top_3_chunks.append({
