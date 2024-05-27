@@ -76,7 +76,7 @@ def process_user_instruction(instruction):
         print(f"\n--- Call number {call_number + 1} ---\n")
 
         response = get_openai_response(functions, messages)
-        print(f"\nResponse from OpenAI:\n{response}\n")
+        # print(f"\nResponse from OpenAI:\n{response}\n")
 
         response_message = response.choices[0].message
         print(f"Response message: {response_message}\n")
