@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from time import time
 from flask import g, Flask, request, jsonify, make_response, url_for, flash, send_file, abort
 from werkzeug.security import check_password_hash
+from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.utils import secure_filename
 from src.routes.pdf_api import bp_api
 from flask_sqlalchemy import SQLAlchemy
@@ -38,6 +39,7 @@ import numpy as np
 from dotenv import load_dotenv
 from neo4j import GraphDatabase, basic_auth
 import openai
+
 from src.openai_funcs import * 
 from src.entity_parse import *
 # from src.extensions import socketio_instance
@@ -65,7 +67,13 @@ nlp = spacy.load("en_blackstone_proto")
 
 
 Payload.max_decode_packets = 50
-ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
+# ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
+ALLOWED_EXTENSIONS = {
+    'pdf': 'pdf', 'docx': 'docx', 'mp4': 'mp4', 'avi': 'avi', 'mov': 'mov',
+    'jpg': 'jpg', 'jpeg': 'jpeg', 'aac': 'aac', 'wav': 'wav', 'png': 'png'
+}
+
+
 app = Flask(__name__)
 app.config['CORS_HEADERS'] = 'Content-Type'
 cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
@@ -272,7 +280,38 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-from werkzeug.datastructures import ImmutableMultiDict
+
+
+@app.route('/upload/multiple-files', methods=['POST'])
+@token_required
+def upload_multiple_files(currentuser):
+    try:
+        if 'files' not in request.files:
+            return jsonify({'message': 'No file part in the request'}), 400
+
+        files = request.files.getlist('files')
+        if not files:
+            return jsonify({'message': 'No files selected for uploading'}), 400
+
+        upload_dir = os.path.join(os.path.dirname(__file__), 'static/uploads/', currentuser.public_id)
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir, exist_ok=True)
+
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(upload_dir, filename))
+            else:
+                return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS.keys())}'}), 400
+
+        return jsonify({'message': 'Files successfully uploaded'}), 201
+
+    except Exception as err:
+        print('An exception occurred!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+
 
 
 @app.route('/upload/file', methods=['POST'])
