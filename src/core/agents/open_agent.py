@@ -1,5 +1,5 @@
 from openai import OpenAI
-import json 
+import json
 from pydantic import ValidationError, BaseModel
 from typing import Any, Dict
 
@@ -20,20 +20,22 @@ from src.core.agents.main_client import client
 from src.socketio_instance import socketio_instance
 from src.core.process.pydantic_models import (GoogleSearchArguments, GoogleSearchResults, GoogleSearchResultItem,
                                               extract_relevant_keys, ChromadbArguments, ChromadbResult, EmitData)
+from src.core.process.token_count import call_token_count
 
 known_actions = {
     "performGoogleSearch": perform_google_search,
     "performGoogleSearchLegislation": perform_google_search_legislation,
     "fetchAndStoreContentChromadb": fetch_and_store_content_chromadb,
-    "queryArticles": query_articles
 }
 
 SYSTEM_MESSAGE = search_sample
 MAX_CALLS = 2
+SIMILARITY_THRESHOLD = 0.8  # 80% match threshold
+MAX_TOKENS = 4096  # Maximum token limit for GPT-3.5-turbo
 
-def get_openai_response(functions, messages):
+def get_openai_response(functions, messages, model="gpt-3.5-turbo-1106"):
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model=model,
         messages=messages,
         functions=functions,
         function_call="auto",
@@ -60,7 +62,7 @@ def emit_func(event_type, data):
 
     socketio_instance.emit('openai-query-response', {'recommendation': message})  # Emit only the text after 'Answer:'
 
-    print(f"Emitting {event_type}: {data}")
+    print(f"Emitting {event_type}: {message}")
 
 def process_user_instruction(instruction):
     print("\n--- Starting process_user_instruction ---\n")
@@ -71,11 +73,12 @@ def process_user_instruction(instruction):
     ]
     results_summary = []
     previous_results = []
+    model = "gpt-3.5-turbo-1106"
 
     for call_number in range(MAX_CALLS):
         print(f"\n--- Call number {call_number + 1} ---\n")
 
-        response = get_openai_response(functions, messages)
+        response = get_openai_response(functions, messages, model=model)
         # print(f"\nResponse from OpenAI:\n{response}\n")
 
         response_message = response.choices[0].message
@@ -106,9 +109,8 @@ def process_user_instruction(instruction):
                         "performGoogleSearch": GoogleSearchArguments,
                         "performGoogleSearchLegislation": GoogleSearchArguments,
                         "fetchAndStoreContentChromadb": ChromadbArguments,
-                        "queryArticles": ChromadbArguments
                     }
-
+                    
                     if function_name in model_mapping:
                         argument_model = model_mapping[function_name]
                     else:
@@ -169,9 +171,25 @@ def process_user_instruction(instruction):
                 break
         else:
             print(f"Completion check result: {response_message.content}\n")
-            emit_func('completion_check', {"result": response_message.content, "function": function_name})
+            emit_func('completion_check', {"result": response_message.content, "function": "completion_check"})
             results_summary.append(response_message.content)
             break
+
+        # If the function returned top chunks, process and append them
+        if 'top_3_chunks' in action_result:
+            combined_chunk_data = "\n\n".join([f"Title: {chunk['title']}\nURL: {chunk['url']}\nContent: {chunk['document']}" for chunk in action_result['top_3_chunks']])
+            additional_message = f"Here are some resources to provide context:\n\n{combined_chunk_data}"
+            messages.append({"content": additional_message, "role": "system"})
+            results_summary.append(additional_message)
+
+            # Check token count and switch model if necessary
+            if not call_token_count("\n".join([msg["content"] for msg in messages]), MAX_TOKENS):
+                model = "gpt-4o"  # Switch to GPT-4 if token count exceeds limit
+
+            response = get_openai_response(functions, messages, model=model)
+            response_message = response.choices[0].message
+            print(f"Response message: {response_message}\n")
+            emit_func('completion_check', {"result": response_message.content, "function": "completion_check"})
 
     print("\n--- Ending process_user_instruction ---\n")
     return results_summary, messages
@@ -179,7 +197,7 @@ def process_user_instruction(instruction):
 # Create a function to handle incoming user instructions
 def handle_user_instruction(instruction):
     try:
-        results = process_user_instruction(instruction)
+        results, messages = process_user_instruction(instruction)
         emit_func('completion_check', {"result": "\n".join(results), "function": "process_user_instruction"})
     except Exception as e:
         emit_func('error', {"error": f"An error occurred: {str(e)}", "function": "process_user_instruction"})
