@@ -77,7 +77,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # socketio_instance = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
 socketio_instance.init_app(app)
-
+emit=socketio_instance.emit
 
 # DATABASE_URL = os.environ.get('HIGHLIGHT_DATABASE_URL')
 # DATABASE_USERNAME = os.environ.get('HIGHLIGHT_DATABASE_USERNAME')
@@ -889,30 +889,23 @@ def handle_openai_call(data):
     print("Received appeal openai_call with data:", data)
     documentId = data['documentId']
     filename = data['filename']
-    request_count = data['requestCount']
-    
-    if filename in filename_to_responses:
-        responses = filename_to_responses[filename]
-        counter = min(request_count, 3) - 1
-        response = responses["insights"][counter]
-    else:
-        # If filename not found, handle misc_call to retrieve the response
-        dir_path = os.path.join(os.path.dirname(__file__),'static', 'notes', documentId)
-        if not os.path.isdir(dir_path):
-            os.makedirs(dir_path, exist_ok=True)
-        if not os.path.isdir(dir_path):
-            os.makedirs(dir_path, exist_ok=True)
-        filepath = os.path.join(dir_path, f'{documentId}.json')
-        if filename:
-            filepath = os.path.join(dir_path, f'{filename}.json')
-            if os.path.isfile(filepath):
-                    print("\nFile exists\n")
-                    with open(filepath) as json_file:
-                        data = json.load(json_file)
-                        # print('data json',data)
-                        full_text= data['text_body']
-                        instruction_for_insights='please provide me an appeal draft for this judgement:-'
-                        response = get_rec(instruction_for_insights,full_text)
+  
+    dir_path = os.path.join(os.path.dirname(__file__),'static', 'notes', documentId)
+    if not os.path.isdir(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+    if not os.path.isdir(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+    filepath = os.path.join(dir_path, f'{documentId}.json')
+    if filename:
+        filepath = os.path.join(dir_path, f'{filename}.json')
+        if os.path.isfile(filepath):
+                print("\nFile exists\n")
+                with open(filepath) as json_file:
+                    data = json.load(json_file)
+                    # print('data json',data)
+                    full_text= data['text_body']
+                    instruction_for_insights='please provide me an appeal draft for this judgement:-'
+                    response = get_rec(instruction_for_insights,full_text)
 
  
     print('openai response',response)
@@ -1097,77 +1090,52 @@ def handle_openai_clause_call(data):
     emit('openai-clause', {'recommendation': response})
 
 
-
-@socketio_instance.on('openai-chat-no-filter-search-agent')
-def handle_openai_chat_total_search_agent(data):
-    print('incoming data',data)
-    print(type(data))
-    # chat_data = data[1]  # This will access the dictionary
-    query = data['query']
-    
-    query_id = query['id']
-    nick_name = query['nickName']
-    message_type = query['type']
-    question = query['message']  # renaming message to question
-    # print(f'ID: {query_id}')
-    # print(f'Nick Name: {nick_name}')
-    # print(f'Type: {message_type}')
-    # print(f'Question: {question}')
-
-    # question=chat_data['query']
-    handle_chat_query(question)
-    max_turns=4
-    i = 0
-    bot = SearchAgent(search_sample)
-    next_prompt = question
-    while i < max_turns:
-        i += 1
-        result = bot(next_prompt)
-        print('result from next iteration of bot',result)
-        # Emit answer if it exists in the response
-        for line in result.split('\n'):
-            if line.startswith("Answer:"):
-                socketio_instance.emit('openai-query-response', {'recommendation': line[7:]})  # Emit only the text after 'Answer:'
-            
-        actions = [action_re.match(a) for a in result.split('\n') if action_re.match(a)]
-        print('actions',actions)
-        if actions:
-            action, action_input = actions[0].groups()
-            if action not in known_actions:
-                raise Exception(f"Unknown action: {action}: {action_input}")
-            print(f" -- running {action} {action_input}")
-            # Execute the action
-            observation = known_actions[action](action_input)
-            print("Observation after actions:", observation)
-            # Update the prompt with the observation to move out of PAUSE
-            next_prompt = f"Observation: {observation}"
-        else:
-            if "PAUSE" in result:
-                # If in PAUSE, move to perform the action
-                last_action, last_input = extract_last_action(result)
-                if last_action and last_input:
-                    observation = known_actions[last_action](last_input)
-                    print("Observation after PAUSE:", observation)
-                    next_prompt = f"Observation: {observation}, I must remember the user's query  :{question}"
-                continue
-            return
-
+filename_to_responses = {}
 
 @socketio_instance.on('openai-chat')
 def handle_openai_chat(data):
     print('incoming data:', data)
     print(type(data))
-    
+
     query = data['query']
-    
+
     query_id = query['id']
     nick_name = query['nickName']
     message_type = query['type']
     question = query['message']  # renaming message to question
+    pdf_document_names = query.get('pdfDocumentName')
+
+    if not isinstance(pdf_document_names, list):
+        pdf_document_names = [pdf_document_names]
+
+    parsed_contents = []
+
+    for pdf_document_name in pdf_document_names:
+        public_id = query.get('publicId')
+        if not public_id:
+            continue
+
+        dir_path = os.path.join(os.path.dirname(__file__), 'static', 'notes', public_id)
+        if not os.path.isdir(dir_path):
+            os.makedirs(dir_path, exist_ok=True)
+
+        filepath = os.path.join(dir_path, f'{pdf_document_name}.json')
+        if os.path.isfile(filepath):
+            print(f"\nReading file: {filepath}\n")
+            with open(filepath, 'r') as json_file:
+                data = json.load(json_file)
+                parsed_text = data.get('text_body', '')
+                parsed_contents.append(parsed_text)
+        else:
+            print(f"\nFile not found: {filepath}\n")
+
+    combined_content = "\n\n".join(parsed_contents)
+    combined_input = f"{question}\n\nAdditional context from provided documents:\n{combined_content}"
+    
+    res_summary, messages = process_user_instruction(combined_input)
+    print('done')
 
     
-    res_summary, messages = process_user_instruction(question)
-
 @socketio_instance.on('connect')
 def test_connect():
     session['sid'] = request.sid

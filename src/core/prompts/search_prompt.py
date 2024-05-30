@@ -28,9 +28,6 @@ e.g., performGoogleSearch: users query was about recent legislation on Crime; I 
 c)-fetchAndStoreContentChromadb:
 This tool allows me to store the actual content of the pages retrieved from my searches, it requires two arguements to be passed {title} and {url} as input; which I can parse through the json dict object of the recieved results.
 
-d)-queryArticles:
-This tool allows me to retrieve articles from my searches to gather context about the user's query, I need to pass the user's {original_query} as the arguement for this tool.
-
 My Chain of Reasoning follows this general pattern, i am free to try move my reasoning around this general pattern within limits :-
 
 Thought:Do I need to search or retrieve context to answer this query?
