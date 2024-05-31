@@ -70,7 +70,7 @@ Payload.max_decode_packets = 50
 # ALLOWED_EXTENSIONS = ['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif']
 ALLOWED_EXTENSIONS = {
     'pdf': 'pdf', 'docx': 'docx', 'mp4': 'mp4', 'avi': 'avi', 'mov': 'mov',
-    'jpg': 'jpg', 'jpeg': 'jpeg', 'aac': 'aac', 'wav': 'wav', 'png': 'png'
+    'jpg': 'jpg', 'jpeg': 'jpeg', 'aac': 'aac', 'wav': 'wav', 'png': 'png','txt': 'txt'
 }
 
 
@@ -307,9 +307,10 @@ def upload_multiple_files(currentuser):
                     'category': 'Legal Document',
                     'summary': 'This is a summary of the document.'
                 })
+            
             else:
                 return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS.keys())}'}), 400
-
+        print('uploaded_files',uploaded_files)
         return jsonify({'message': 'Files successfully uploaded', 'files': uploaded_files}), 201
 
     except Exception as err:
