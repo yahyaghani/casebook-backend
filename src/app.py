@@ -297,14 +297,20 @@ def upload_multiple_files(currentuser):
         if not os.path.exists(upload_dir):
             os.makedirs(upload_dir, exist_ok=True)
 
+        uploaded_files = []
         for file in files:
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(upload_dir, filename))
+                uploaded_files.append({
+                    'name': filename,
+                    'category': 'Legal Document',
+                    'summary': 'This is a summary of the document.'
+                })
             else:
                 return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS.keys())}'}), 400
 
-        return jsonify({'message': 'Files successfully uploaded'}), 201
+        return jsonify({'message': 'Files successfully uploaded', 'files': uploaded_files}), 201
 
     except Exception as err:
         print('An exception occurred!!')
