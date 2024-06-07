@@ -2,9 +2,14 @@ import os
 import base64
 import cv2
 import json 
+from flask import current_app
+from os.path import isfile, join, dirname
 
 from moviepy.editor import VideoFileClip
 from src.core.agents.main_client import client
+from src.db.main_model import *
+from src.util_helpers.pdf_utils import process_pdf
+
 
 def process_text_file(text_path):
     with open(text_path, 'r') as file:
@@ -66,66 +71,79 @@ def save_text_to_file(text, directory, filename):
         file.write(text)
     return file_path
 
-def save_processed_file_to_db(file_path, public_id):
+def save_processed_file_to_db(file_path, public_id, case_id=None):
     filename = os.path.basename(file_path)
-    file_post = FilePost(fileName=filename, user_id=public_id)
+    file_post = FilePost(fileName=filename, user_id=public_id, case_id=case_id)  # Ensure case_id is used here
     db.session.add(file_post)
     db.session.commit()
 
 
 ###File handler####
+def ensure_directory_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
 
-def file_handler(file_path, file_type, public_id, file_name):
-    upload_dir = os.path.join(os.path.dirname(__file__), 'static/uploads/', public_id)
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir, exist_ok=True)
-        
-    file_type=file_type.lower()
 
-    if file_type in ['.mp4','.avi','.webm','.mov']:
+def file_handler(file_path, file_type, public_id, file_name, case_id):
+    base_dir = current_app.config['STATIC_FOLDER']
+    upload_dir = os.path.join(base_dir, 'uploads', public_id)
+    summary_dir = os.path.join(base_dir, 'uploads', 'summary', public_id)
+
+    ensure_directory_exists(upload_dir)
+    ensure_directory_exists(summary_dir)
+
+    print(f"Checking if upload directory {upload_dir} exists...")
+    file_type = file_type.lower()
+    text = ""  # Initialize text to ensure it's available for all file types
+
+    print(f"Processing file: {file_path} of type: {file_type}")
+    if file_type in ['.mp4', '.avi', '.webm', '.mov']:
+        print("Processing video file...")
         frames, audio_path = process_video(file_path)
         video_summary = generate_video_summary(frames)
+        text = video_summary  # Assume generate_video_summary returns text
+        print(f"Video summary generated. Length of text: {len(text)} characters")
+
         if audio_path:
-            text = transcribe_audio(audio_path)
-            video_summary = text + '\n\n' + video_summary
-            # Save transcription to a file
-            transcription_file_path = save_text_to_file(text, upload_dir, os.path.splitext(file_name)[0] + "_transcription.txt")
-            save_processed_file_to_db(transcription_file_path, public_id)
-        
-        # Save video summary to a file
-        summary_file_path = save_text_to_file(video_summary, upload_dir, os.path.splitext(file_name)[0] + "_summary.txt")
-        save_processed_file_to_db(summary_file_path, public_id)
-    
+            print("Transcribing audio...")
+            aud_text = transcribe_audio(audio_path)
+            text += '\n\n' + aud_text  # Append transcription text to the video summary
+            transcription_file_path = save_text_to_file(aud_text, summary_dir, os.path.splitext(file_name)[0] + "_audio_summary.txt")
+            save_processed_file_to_db(transcription_file_path, public_id, case_id)
+            print(f"Audio transcription saved to {transcription_file_path}")
+
+        summary_file_path = save_text_to_file(text, summary_dir, os.path.splitext(file_name)[0] + "_video_summary.txt")
+        save_processed_file_to_db(summary_file_path, public_id, case_id)
+        print(f"Video summary saved to {summary_file_path}")
+
     elif file_type in ['.mp3', '.wav']:
+        print("Processing audio file...")
         text = transcribe_audio(file_path)
-        # Save transcription to a file
-        transcription_file_path = save_text_to_file(text, upload_dir, os.path.splitext(file_name)[0] + "_transcription.txt")
-        save_processed_file_to_db(transcription_file_path, public_id)
-        return text
-    
+        transcription_file_path = save_text_to_file(text, summary_dir, os.path.splitext(file_name)[0] + "_audio_summary.txt")
+        save_processed_file_to_db(transcription_file_path, public_id, case_id)
+        print(f"Audio transcription saved to {transcription_file_path}")
+
     elif file_type in ['.jpg', '.png']:
+        print("Processing image file...")
         base64_image = encode_image(file_path)
-        summary = generate_image_summary(base64_image)
+        text = generate_image_summary(base64_image)
+        image_summary_file_path = save_text_to_file(text, summary_dir, file_name + "_image_summary.txt")
+        save_processed_file_to_db(image_summary_file_path, public_id, case_id)
+        print(f"Image summary saved to {image_summary_file_path}")
 
-        # Optionally save base64 to a file if needed
-        return summary
-    
-    elif file_type in ['.pdf']:
-        text =get_user_pdf2(public_id, file_name,inbound=True)
-        return text
-    
     elif file_type in ['.txt']:
+        print(f"Processing text file of type: {file_type}")
         text = process_text_file(file_path)
-        processed_file_path = save_text_to_file(text, upload_dir, file_name + ".txt")
-        save_processed_file_to_db(processed_file_path, public_id)
+        processed_file_path = save_text_to_file(text, summary_dir, file_name + "_txt_summary.txt")
+        save_processed_file_to_db(processed_file_path, public_id, case_id)
+        print(f"Text file processed and saved to {processed_file_path}")
 
+    elif file_type in ['.pdf']:
+        text = process_pdf(public_id, file_name)
         return text
-    
-    else:
-        return "Unsupported file type."
 
-
-
+    return text
+  
 #####Openai calls###
     
 

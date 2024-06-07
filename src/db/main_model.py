@@ -43,6 +43,7 @@ class FilePost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     fileName = db.Column(db.String(80))
     user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
+    case_id = db.Column(db.Integer, db.ForeignKey('caselog.id'), nullable=True)  # Optional link to the case
     caselogs = db.relationship('Caselog', secondary=caselog_files, back_populates='files')
     total_rating = db.Column(db.Integer)
 
@@ -91,9 +92,9 @@ class Rating(db.Model):
 
 class Caselog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    case_description = db.Column(db.String(255))  # Case description or title
-    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'))  # Link to the user
-    files = db.relationship('FilePost', secondary='caselog_files', back_populates="caselogs")  # Relationship to files
+    case_description = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
+    files = db.relationship('FilePost', secondary='caselog_files', back_populates="caselogs")
 
     def __repr__(self):
         return f'<Caselog {self.id} {self.case_description}>'
