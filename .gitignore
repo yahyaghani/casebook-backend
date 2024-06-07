@@ -14,3 +14,4 @@ data
 pyvenv.cfg
 .vscode
 venv/
+spacy_models/*.csv
