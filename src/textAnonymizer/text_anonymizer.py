@@ -218,6 +218,27 @@ def get_fictional_language(text):
             xcess_language_count += 1
             fictional_language_assignment[text]='[LANGUAGE'+str(xcess_language_count)+']'
             return fictional_language_assignment[text]
+# Add this dictionary at the beginning of your text_anonymizer.py file
+ENTITY_TYPE_PLACEHOLDERS = {
+    "PERSON": "[Insert PERSON here]",
+    "NORP": "[Insert NATIONALITY or RELIGIOUS/POLITICAL GROUP here]",
+    "FAC": "[Insert FACILITY here]",
+    "ORG": "[Insert ORGANIZATION here]",
+    "GPE": "[Insert COUNTRY/CITY/STATE here]",
+    "LOC": "[Insert LOCATION here]",
+    "PRODUCT": "[Insert PRODUCT here]",
+    "EVENT": "[Insert EVENT here]",
+    "WORK_OF_ART": "[Insert WORK OF ART here]",
+    "LAW": "[Insert LAW here]",
+    "LANGUAGE": "[Insert LANGUAGE here]",
+    "DATE": "[Insert DATE here]",
+    "TIME": "[Insert TIME here]",
+    "PERCENT": "[Insert PERCENTAGE here]",
+    "MONEY": "[Insert MONEY here]",
+    "QUANTITY": "[Insert QUANTITY here]",
+    "ORDINAL": "[Insert “first”, “second” here]",
+    "CARDINAL": "[Insert Misc Numerals here]"
+}
 
 def replace_name(token, name_types=["PERSON"], fictional=False):
     '''
@@ -225,29 +246,29 @@ def replace_name(token, name_types=["PERSON"], fictional=False):
     token type.
     Inputs:
         token: spaCy token object
-        name_types: name types to be annonymized (default = "PERSON")
+        name_types: name types to be anonymized (default = "PERSON")
                     valid types include:
-                        PERSON	People, including fictional.
-                        NORP	Nationalities or religious or political groups.
-                        FAC	Buildings, airports, highways, bridges, etc.
-                        ORG	Companies, agencies, institutions, etc.
-                        GPE	Countries, cities, states.
-                        LOC	Non-GPE locations, mountain ranges, bodies of water.
-                        PRODUCT	Objects, vehicles, foods, etc. (Not services.)
-                        EVENT	Named hurricanes, battles, wars, sports events, etc.
-                        WORK_OF_ART	Titles of books, songs, etc.
-                        LAW	Named documents made into laws.
-                        LANGUAGE	Any named language.
-                        DATE	Absolute or relative dates or periods.
-                        TIME	Times smaller than a day.
-                        PERCENT	Percentage, including ”%“.
-                        MONEY	Monetary values, including unit.
-                        QUANTITY	Measurements, as of weight or distance.
-                        ORDINAL	“first”, “second”, etc.
-                        CARDINAL	Numerals that do not fall under another type.
-        fictional: if True, names are replaces with fictional names rather than place holders
+                        PERSON    People, including fictional.
+                        NORP    Nationalities or religious or political groups.
+                        FAC    Buildings, airports, highways, bridges, etc.
+                        ORG    Companies, agencies, institutions, etc.
+                        GPE    Countries, cities, states.
+                        LOC    Non-GPE locations, mountain ranges, bodies of water.
+                        PRODUCT    Objects, vehicles, foods, etc. (Not services.)
+                        EVENT    Named hurricanes, battles, wars, sports events, etc.
+                        WORK_OF_ART    Titles of books, songs, etc.
+                        LAW    Named documents made into laws.
+                        LANGUAGE    Any named language.
+                        DATE    Absolute or relative dates or periods.
+                        TIME    Times smaller than a day.
+                        PERCENT    Percentage, including ”%“.
+                        MONEY    Monetary values, including unit.
+                        QUANTITY    Measurements, as of weight or distance.
+                        ORDINAL    “first”, “second”, etc.
+                        CARDINAL    Numerals that do not fall under another type.
+        fictional: if True, names are replaced with fictional names rather than placeholders
     Outputs:
-        text: either the origin token text or a place holder
+        text: either the origin token text or a placeholder
     '''
     if token.ent_iob != 0 and token.ent_type_ in name_types:
         if fictional:
@@ -262,9 +283,9 @@ def replace_name(token, name_types=["PERSON"], fictional=False):
             elif token.ent_type_ == "LANGUAGE":
                 txt = get_fictional_language(token.text)
             else:
-                txt = "[REDACTED]"
-        else:                
-            txt = "[REDACTED]"
+                txt = ENTITY_TYPE_PLACEHOLDERS.get(token.ent_type_, "[Insert ENTITY here]")
+        else:
+            txt = ENTITY_TYPE_PLACEHOLDERS.get(token.ent_type_, "[Insert ENTITY here]")
     else:
         txt = token.text
     return txt + token.whitespace_

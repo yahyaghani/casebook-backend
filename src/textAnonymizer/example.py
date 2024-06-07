@@ -32,4 +32,4 @@ from spacy import displacy
 
 nlp = en_core_web_sm.load()
 doc = nlp(text)
-displacy.serve(doc, style="ent")
+# displacy.serve(doc, style="ent")

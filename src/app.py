@@ -1,53 +1,45 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+import json
+import os
+from os import listdir
+from os.path import isfile, join, dirname
 from time import time
 from flask import g, Flask, request, jsonify, make_response, url_for, flash, send_file, abort
 from werkzeug.security import check_password_hash
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.utils import secure_filename
 from src.routes.pdf_api import bp_api
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.inspection import inspect
 from flask_migrate import Migrate
 from engineio.payload import Payload
 from flask_cors import CORS, cross_origin
-from src.utils import check_password_and_generate_hash, check_password
+from flask import session
+
 from datetime import timedelta, datetime
-import json
-import os
-from os import listdir
-from os.path import isfile, join, dirname
+import pandas as pd
+import numpy as np
+import re
 import uuid
 import jwt
 from functools import wraps
 import spacy
+
+from dotenv import load_dotenv
+from neo4j import GraphDatabase, basic_auth
 from pdfminer.layout import LAParams, LTTextBox
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
 from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
-from collections import Counter
-from typing import Pattern
-import pandas as pd
-import numpy as np
-import re
-from flask_cors import CORS, cross_origin
-import argparse
-import logging
-from tqdm import trange
-from src.textAnonymizer import text_anonymizer
-import numpy as np
-from dotenv import load_dotenv
-from neo4j import GraphDatabase, basic_auth
-import openai
 
+from src.db.main_model import *
 from src.openai_funcs import * 
 from src.entity_parse import *
-# from src.extensions import socketio_instance
-# from flask_socketio import emit,SocketIO,join_room
 from src.core.prompts.search_prompt import search_sample
 from src.core.agents.open_agent import process_user_instruction
-from flask import session
+from src.textAnonymizer import text_anonymizer
+from src.utils import check_password_and_generate_hash, check_password
 from src.socketio_instance import socketio_instance  # Import from the new module
+from src.core.multi_mode.video_pipe import *
 
 dotenv_path = join(dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
@@ -88,9 +80,13 @@ socketio_instance.init_app(app)
 emit=socketio_instance.emit
 
 
-db = SQLAlchemy(app)
+# db = SQLAlchemy(app)
 
-migrate = Migrate(app, db)
+# migrate = Migrate(app, db)
+# init_db(app)
+
+init_db(app)  # Initialize the database with the app
+setup_database(app)  # Now it's safe to setup the database
 
 citation_regex = r"((?:PLD|SCMR|CLC|PCrLJ|PTD|PLC|CLD|YLR|GBLR|AIR|AC|Q\.B|PCr\.LJ|MLD|P Cr\. L J|ER|KB|Lloyd’s Rep|SCC|F\.R\.D|F\.3d)\s\d{4}\s(?:[^\d]+)?\d{1,3}|\d{4}\s(?:PLD|SCMR|CLC|PCrLJ|PTD|PLC|CLD|YLR|GBLR|AIR|AC|Q\.B|PCr\.LJ|MLD|P Cr\. L J|ER|KB|Lloyd’s Rep|SCC|F\.R\.D|F\.3d)\s(?:[^\d]+)?\d{1,4})"
 
@@ -98,79 +94,6 @@ citation_regex = r"((?:PLD|SCMR|CLC|PCrLJ|PTD|PLC|CLD|YLR|GBLR|AIR|AC|Q\.B|PCr\.
 def close_db(error):
     if hasattr(g, 'neo4j_db'):
         g.neo4j_db.close()
-
-
-# all the models
-
-class UserModel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    public_id = db.Column(db.String(50), unique=True)
-    fname = db.Column(db.String(80))
-    lname = db.Column(db.String(80))
-    username = db.Column(db.String(80), unique=True)
-    city = db.Column(db.String(80))
-    country = db.Column(db.String(80))
-    organisation = db.Column(db.String(80))
-    email = db.Column(db.String(80))
-    password = db.Column(db.String(500))
-    admin = db.Column(db.Boolean)
-    FilePosts = db.relationship('FilePost', backref=db.backref('user_model', lazy='joined'), lazy='select')
-    Ratings = db.relationship('Rating', backref=db.backref('user_model', lazy='select'), lazy='select')
-
-    def __repr__(self):
-        return f'{self.public_id}'
-
-
-class FilePost(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    fileName = db.Column(db.String(80))
-    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
-    total_rating = db.Column(db.Integer)
-    ratings = db.relationship('Rating', backref=db.backref('file_post', lazy='select'), lazy='joined')
-
-    def __repr__(self):
-        return f'{self.id}'
-
-    def serialize(self):
-        post = {c: getattr(self, c) for c in inspect(self).attrs.keys()}
-        if 'user_model' in post and getattr(self, 'user_model'):
-            del post['user_model']
-            post['user_info'] = {}
-            for c in inspect(self.user_model).attrs.keys():
-                post['user_info'][c] = getattr(self.user_model, c)
-            del post['user_info']['FilePosts']
-            del post['user_info']['Ratings']
-            del post['user_info']['password']
-        if 'ratings' in post:
-            post['all_ratings'] = []
-            for rating in post['ratings']:
-                newRating = {}
-                newRating['rating'] = getattr(rating, 'rating')
-                newRating['review'] = getattr(rating, 'review')
-                newRating['id'] = getattr(rating, 'id')
-                newRating['user_id'] = getattr(rating, 'user_id')
-                post['all_ratings'].append(newRating)
-            del post['ratings']
-        return post
-
-
-class Rating(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    rating = db.Column(db.Integer)
-    review = db.Column(db.String(80))
-    post_id = db.Column(db.Integer, db.ForeignKey('file_post.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
-
-    def __repr__(self):
-        return f'{self.id}'
-
-    def serialize(self):
-        return {c: getattr(self, c) for c in inspect(self).attrs.keys()}
-
-
-# custom decorators
-
-db.create_all()
 
 
 def token_required(f):
@@ -263,7 +186,6 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-
 @app.route('/upload/multiple-files', methods=['POST'])
 @token_required
 def upload_multiple_files(currentuser):
@@ -283,18 +205,20 @@ def upload_multiple_files(currentuser):
         for file in files:
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                split_filename, file_extension = os.path.splitext(file.filename)
-                file.save(os.path.join(upload_dir, filename))
+                file_path = os.path.join(upload_dir, filename)
+                file.save(file_path)
+                file_extension = os.path.splitext(filename)[1].lower()
+                summary = file_handler(file_path, file_extension,currentuser.public_id,filename)
+                short_sum=summary[:200]
                 uploaded_files.append({
                     'name': filename,
-                    'category': 'Legal Document',
-                    'summary': 'This is a summary of the document.',
-                    'type':file_extension
+                    'category': 'Determined by file type',
+                    'summary': short_sum,
+                    'type': file_extension
                 })
-            
             else:
-                return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS.keys())}'}), 400
-        print('uploaded_files',uploaded_files)
+                return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS)}'}), 400
+        
         return jsonify({'message': 'Files successfully uploaded', 'files': uploaded_files}), 201
 
     except Exception as err:
@@ -302,6 +226,32 @@ def upload_multiple_files(currentuser):
         print(err)
         return make_response('Something went wrong!!', 500)
 
+
+def file_handler(file_path, file_type,public_id,file_name):
+    
+    if file_type in ['.mp4']:
+        frames, audio_path = process_video(file_path)
+        video_summary = generate_video_summary(frames)
+        if audio_path:
+            text = transcribe_audio(file_path)
+            video_summary=text+'\n\n'+video_summary
+        
+        return video_summary
+    
+    elif file_type in ['.mp3', '.wav']:
+        text = transcribe_audio(file_path)
+        return text
+    elif file_type in ['.jpg', '.png']:
+        base64_image = encode_image(file_path)
+        return base64_image
+    elif file_type in ['.pdf']:
+        text =get_user_pdf2(public_id, file_name,inbound=True)
+        return text
+    elif file_type in ['.txt']:
+        text = process_text_file(file_path)
+        return text
+    else:
+        return "Unsupported file type."
 
 
 
@@ -407,6 +357,7 @@ def create_file_post(userPublicId, filename):
         newPost = FilePost(fileName=filename, total_rating=0, user_id=user.id)
         db.session.add(newPost)
         db.session.commit()
+        #### total rating has been removed from schema ###
         return jsonify({'message': 'file shared successfully', 'post': {'fileName': newPost.fileName,
                                                                         'tatalRating': newPost.total_rating,
                                                                         'user_id': newPost.user_id,
@@ -697,7 +648,7 @@ sample_accordion_data={
   
 
 @app.route('/highlights-json/<path:userPublicId>/<path:filename>', methods=['GET'])
-def get_user_pdf2(userPublicId, filename):
+def get_user_pdf2(userPublicId, filename,inbound=False):
     ## get pdf file ##
     # retrieve body data from input JSON
     print(userPublicId)
@@ -921,6 +872,9 @@ def get_user_pdf2(userPublicId, filename):
     with open(notesFilePath, 'w') as notes_file:
         json.dump({"text_body": full_text}, notes_file)
     print('done processing file')
+    if inbound:
+        return full_text
+
     return response
 
 
@@ -1201,125 +1155,8 @@ def test_connect():
             return 'Something went wrong!!'
 
 
-## Old Custom Trained GPT2 Model
-def interact_model(    
-    model_name='contracts_model',
-    seed=None,
-    nsamples=3,
-    batch_size=3,
-    length=25,
-    temperature=0.79,
-    top_k=0,
-    top_p=1,
-    models_dir='./src/gptmodules/',
-    input_text=None
-):
-    """
-    Interactively run the model
-    :model_name=124M : String, which model to use
-    :seed=None : Integer seed for random number generators, fix seed to reproduce
-     results
-    :nsamples=1 : Number of samples to return total
-    :batch_size=1 : Number of batches (only affects speed/memory).  Must divide nsamples.
-    :length=None : Number of tokens in generated text, if None (default), is
-     determined by model hyperparameters
-    :temperature=1 : Float value controlling randomness in boltzmann
-     distribution. Lower temperature results in less random completions. As the
-     temperature approaches zero, the model will become deterministic and
-     repetitive. Higher temperature results in more random completions.
-    :top_k=0 : Integer value controlling diversity. 1 means only 1 word is
-     considered for each step (token), resulting in deterministic completions,
-     while 40 means 40 words are considered at each step. 0 (default) is a
-     special setting meaning no restrictions. 40 generally is a good value.
-     :models_dir : path to parent folder containing model subfolders
-     (i.e. contains the <model_name> folder)
-    """
-    
-    
-    models_dir = os.path.expanduser(os.path.expandvars(models_dir))
-    if batch_size is None:
-        batch_size = 1
-    assert nsamples % batch_size == 0
-
-    enc = encoder.get_encoder(model_name, models_dir)
-    hparams = model.default_hparams()
-    with open(os.path.join(models_dir, model_name, 'hparams.json')) as f:
-        hparams.override_from_dict(json.load(f))
-
-    if length is None:
-        length = hparams.n_ctx // 2
-    elif length > hparams.n_ctx:
-        raise ValueError("Can't get samples longer than window size: %s" % hparams.n_ctx)
-
-    with tf.Session(graph=tf.Graph()) as sess:
-        context = tf.placeholder(tf.int32, [batch_size, None])
-        np.random.seed(seed)
-        tf.set_random_seed(seed)
-        output = sample.sample_sequence(
-            hparams=hparams, length=length,
-            context=context,
-            batch_size=batch_size,
-            temperature=temperature, top_k=top_k, top_p=top_p
-        )
-
-        saver = tf.train.Saver()
-        ckpt = tf.train.latest_checkpoint(os.path.join(models_dir, model_name))
-        saver.restore(sess, ckpt)
-        result_dic={}
-        result_text=[]
-        sample_no=[]
-        raw_text = input_text
-        context_tokens = enc.encode(raw_text)
-        generated = 0
-        for _ in range(nsamples // batch_size):
-           out = sess.run(output, feed_dict={
-           context: [context_tokens for _ in range(batch_size)]
-           })[:, len(context_tokens):]
-        for i in range(batch_size):
-           generated += 1
-           text = enc.decode(out[i])
-
-           print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
-        #    fullsample = ("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
-
-           print(text)
-       
-           result_text.append(text)
-           sample_no.append("SAMPLE"+ str (generated))
-        #    result_dic= {k:v for k,v in zip (sample_no,result_text)}
-        #    result_dic= {
-            #    "text": result_text,
-        #    }
-
-        print(result_text)
-        print("=" * 80)
-
-        return result_text
-
-
-@app.route("/generate", methods=['GET', 'POST'])
-@token_required
-def get_gen(user=None):
-    data = request.get_json()
-
-    if 'text' not in data or len(data['text']) == 0 :
-        abort(400)
-    else:
-        text = data['text']
-        # model = data['model']
-
-        result = interact_model(
-            # model_type='gpt2',
-            length=100,
-            input_text=text,
-            # model_name_or_path=model
-        )
-
-        return jsonify({'result': result})
-
-
 # if __name__ == "__main__":
 #     socketio.run(host='0.0.0.0', debug=True)
     
 if __name__ == '__main__':
-    socketio.run(app, async_mode='gevent', host='0.0.0.0', port=5000)
+    socketio_instance.run(app, async_mode='gevent', host='0.0.0.0', port=5000)
