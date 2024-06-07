@@ -287,32 +287,19 @@ def upload_file(currentuser):
             resp = jsonify({'message': 'No file part in the request'})
             resp.status_code = 400
             return resp
-        # file = request.files['file']
-        # if file.filename == '':
-        #     print('No filename selected')
-        #     resp = jsonify({'message': 'No file selected for uploading'})
-        #     resp.status_code = 400
-        #     return resp
+   
         files = request.files.getlist('file')
-        # d = ImmutableMultiDict(files)
-        # files = dict(d.lists())
-
-        # print(request.files)
         print(files)
-        # print(type(file))
-
         for file in files:
             if file and allowed_file(file.filename):
                 dir = os.path.join(os.path.dirname(__file__) +'/static' + 
                                    '/uploads/', currentuser.public_id)
-                # dir = os.path.join(os.path.dirname(__file__) +
-                #                 '/uploads/', "123")
+             
                 if os.path.isdir(dir) == False:
                     print("doesnt exist")
                     os.makedirs(dir, exist_ok=True)
                     UPLOAD_FOLDER = dir
 
-                # filename = secure_filename(file.filename)
                 filename = file.filename
                 file.save(os.path.join(dir, filename))
             else:
@@ -648,9 +635,6 @@ def get_relationships(node):
 def has_forbidden_label(entities, forbidden_labels=['OTHER', 'ISSUE']):
     return any(label in forbidden_labels for  label in entities)
 
-
-instruction_for_entities=instruction=""" as a legal copilot, please extract the following and provide them in seperate lists ; 
-# CITATIONs, JUDGEs, CASENAMEs,COURTs,LEGAL PROVISIONs"""
 
 my_labels = ["CITATION", "CASENAME", "PROVISION", "JUDGE", "COURT","INSTRUMENT"]
 
