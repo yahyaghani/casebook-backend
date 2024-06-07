@@ -77,6 +77,12 @@ app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['STATIC_FOLDER'] = STATIC_FOLDER
+app.config['UPLOAD_FOLDER'] = os.path.join(app.config['STATIC_FOLDER'], 'uploads')
+app.config['NOTES_FOLDER'] = os.path.join(app.config['STATIC_FOLDER'], 'notes')
+app.config['HIGHLIGHTS_FOLDER'] = os.path.join(app.config['STATIC_FOLDER'], 'highlights')
+app.config['GRAPHDATA_FOLDER'] = os.path.join(app.config['STATIC_FOLDER'], 'graphData')
+app.config['SUMMARY_FOLDER'] = os.path.join(app.config['STATIC_FOLDER'], 'uploads', 'summary')  # Adjust as needed
+
 # socketio_instance = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
 socketio_instance.init_app(app)
 emit=socketio_instance.emit
@@ -268,33 +274,6 @@ def upload_multiple_files(currentuser):
         print('An exception occurred!!')
         print(err)
         return make_response('Something went wrong!!', 500)
-
-
-# def file_handler(file_path, file_type,public_id,file_name):
-    
-#     if file_type in ['.mp4']:
-#         frames, audio_path = process_video(file_path)
-#         video_summary = generate_video_summary(frames)
-#         if audio_path:
-#             text = transcribe_audio(file_path)
-#             video_summary=text+'\n\n'+video_summary
-        
-#         return video_summary
-    
-#     elif file_type in ['.mp3', '.wav']:
-#         text = transcribe_audio(file_path)
-#         return text
-#     elif file_type in ['.jpg', '.png']:
-#         base64_image = encode_image(file_path)
-#         return base64_image
-#     elif file_type in ['.pdf']:
-#         text =get_user_pdf2(public_id, file_name,inbound=True)
-#         return text
-#     elif file_type in ['.txt']:
-#         text = process_text_file(file_path)
-#         return text
-#     else:
-#         return "Unsupported file type."
 
 
 
