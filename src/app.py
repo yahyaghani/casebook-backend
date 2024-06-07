@@ -71,10 +71,12 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static/uploads')
+STATIC_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static')
+
 app.config.from_pyfile('settings.py')
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
+app.config['STATIC_FOLDER'] = STATIC_FOLDER
 # socketio_instance = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_interval=2000, ping_timeout=30000)
 socketio_instance.init_app(app)
 emit=socketio_instance.emit
@@ -186,39 +188,80 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/user/<int:user_id>/cases', methods=['GET'])
+@token_required
+def get_user_cases(currentuser):
+    # if currentuser.id != user_id:
+    #     return jsonify({'message': 'Unauthorized access'}), 403
+    
+    cases = Caselog.query.filter_by(user_id=currentuser.id).all()
+    case_list = [{'id': case.id, 'description': case.case_description} for case in cases]
+
+    return jsonify(case_list), 200
+
+
 @app.route('/upload/multiple-files', methods=['POST'])
 @token_required
 def upload_multiple_files(currentuser):
     try:
+        print("Retrieving case name from form data...")
+        case_name = request.form.get('case_name')  # Retrieve case_name from form data
+        print(f"Case name received: {case_name}")
+
+        case_id = None
+        if case_name:
+            print("Checking for existing case in the database...")
+            existing_case = Caselog.query.filter_by(case_description=case_name, user_id=currentuser.id).first()
+            if not existing_case:
+                print("No existing case found, creating a new case...")
+                new_case = Caselog(case_description=case_name, user_id=currentuser.id)
+                db.session.add(new_case)
+                db.session.commit()
+                case_id = new_case.id
+                print(f"New case created with ID: {case_id}")
+            else:
+                case_id = existing_case.id
+                print(f"Existing case found with ID: {case_id}")
+
+        print("Checking if files are included in the request...")
         if 'files' not in request.files:
+            print("No file part in the request")
             return jsonify({'message': 'No file part in the request'}), 400
 
         files = request.files.getlist('files')
         if not files:
+            print("No files selected for uploading")
             return jsonify({'message': 'No files selected for uploading'}), 400
 
+        print(f"Creating upload directory for user {currentuser.public_id}...")
         upload_dir = os.path.join(os.path.dirname(__file__), 'static/uploads/', currentuser.public_id)
         if not os.path.exists(upload_dir):
             os.makedirs(upload_dir, exist_ok=True)
+            print(f"Upload directory created at {upload_dir}")
 
         uploaded_files = []
         for file in files:
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_dir, filename)
+                print(f"Saving file: {filename} to {file_path}")
                 file.save(file_path)
                 file_extension = os.path.splitext(filename)[1].lower()
-                summary = file_handler(file_path, file_extension,currentuser.public_id,filename)
-                short_sum=summary[:200]
+                print(f"Processing file {filename} with extension {file_extension}")
+                summary = file_handler(file_path, file_extension, currentuser.public_id, filename, case_id)
+                short_sum = summary[:200] if summary else "No summary available"
                 uploaded_files.append({
                     'name': filename,
                     'category': 'Determined by file type',
                     'summary': short_sum,
                     'type': file_extension
                 })
+                print(f"File {filename} processed and added to the response")
             else:
+                print(f"File {file.filename} is not an allowed file type")
                 return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS)}'}), 400
         
+        print("All files successfully uploaded")
         return jsonify({'message': 'Files successfully uploaded', 'files': uploaded_files}), 201
 
     except Exception as err:
@@ -227,31 +270,31 @@ def upload_multiple_files(currentuser):
         return make_response('Something went wrong!!', 500)
 
 
-def file_handler(file_path, file_type,public_id,file_name):
+# def file_handler(file_path, file_type,public_id,file_name):
     
-    if file_type in ['.mp4']:
-        frames, audio_path = process_video(file_path)
-        video_summary = generate_video_summary(frames)
-        if audio_path:
-            text = transcribe_audio(file_path)
-            video_summary=text+'\n\n'+video_summary
+#     if file_type in ['.mp4']:
+#         frames, audio_path = process_video(file_path)
+#         video_summary = generate_video_summary(frames)
+#         if audio_path:
+#             text = transcribe_audio(file_path)
+#             video_summary=text+'\n\n'+video_summary
         
-        return video_summary
+#         return video_summary
     
-    elif file_type in ['.mp3', '.wav']:
-        text = transcribe_audio(file_path)
-        return text
-    elif file_type in ['.jpg', '.png']:
-        base64_image = encode_image(file_path)
-        return base64_image
-    elif file_type in ['.pdf']:
-        text =get_user_pdf2(public_id, file_name,inbound=True)
-        return text
-    elif file_type in ['.txt']:
-        text = process_text_file(file_path)
-        return text
-    else:
-        return "Unsupported file type."
+#     elif file_type in ['.mp3', '.wav']:
+#         text = transcribe_audio(file_path)
+#         return text
+#     elif file_type in ['.jpg', '.png']:
+#         base64_image = encode_image(file_path)
+#         return base64_image
+#     elif file_type in ['.pdf']:
+#         text =get_user_pdf2(public_id, file_name,inbound=True)
+#         return text
+#     elif file_type in ['.txt']:
+#         text = process_text_file(file_path)
+#         return text
+#     else:
+#         return "Unsupported file type."
 
 
 
