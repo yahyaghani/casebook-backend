@@ -168,7 +168,7 @@ def process_pdf(userPublicId, filename):
                     doc.cats.pop('UNCAT')
 
                     top_category = get_top_cat(doc)
-                    print (f"\"{sentence}\" {top_category}\n")
+                    # print (f"\"{sentence}\" {top_category}\n")
                     most_common=top_category
                 if len(text) > 50:
                     # doc2 = nlp(sentence)

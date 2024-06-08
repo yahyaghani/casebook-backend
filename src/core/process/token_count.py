@@ -35,7 +35,7 @@ def call_token_count(text, max_tokens):
     
     # Tokenize the text and count tokens
     num_tokens = num_tokens_from_string(text, encoding.name)
-    print(f'Number of tokens in "{text}": {num_tokens}')
+    print(f'Number of tokens in {num_tokens}')
     
     # Check if the number of tokens is within the allowable limit
     return num_tokens <= max_tokens
