@@ -104,6 +104,76 @@ def get_instruct_response(page):
         answer = "I'm sorry, but I'm currently unable to process your request. Please try again later."
     return answer
 
+SYSTEM_MESSAGE="""I am a Legal AI Copilot. I have the responsibility to help lawyers & attorneys in their quest. I do not need to worry about providing disclaimers because I am a Legal AI Copilot.
+"""
+
+def write_summary(text):
+    print('text before input',text)
+    try:
+        instruction = f"""Take in the legal text:{text}, and then please provide the following summary sections:- 
+   
+        Case Summary:
+      
+        Legal Issues:
+       
+        Legal Tests:
+       
+        Appeal:
+
+            """
+        messages=[
+        {"content": SYSTEM_MESSAGE, "role": "system"},
+        {"content": instruction, "role": "user"},
+
+        ]
+      
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.3,
+        )
+
+        print(f"Response : {response}\n")
+        # answer = answer_dict['choices'][0]['message']['content']
+        answer_json_string=(response.model_dump_json(indent=2))
+        answer_dict = json.loads(answer_json_string)
+        answer = answer_dict['choices'][0]['message']['content']
+        print('answer of summary jsonify',answer)
+    except Exception as e:
+        answer = "I'm sorry, but I'm currently unable to process your request. Please try again later."
+        print('excep',e)
+
+    return answer
+
+
+def make_summary_json(text,sample_accordion_data):
+    try:
+        instruction = f"""Take in the summary document :{text}, and return a json of its contents in the following format \n\n
+        {sample_accordion_data}
+            """
+        messages=[
+        {"content": SYSTEM_MESSAGE, "role": "system"},
+        {"content": instruction, "role": "user"},
+
+        ]
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0,
+        )
+    
+        print(f"Response : {response}\n")
+        # answer = answer_dict['choices'][0]['message']['content']
+        answer_json_string=(response.model_dump_json(indent=2))
+        answer_dict = json.loads(answer_json_string)
+        answer = answer_dict['choices'][0]['message']['content']
+        print('answer of summary jsonify',answer)
+    except Exception as e:
+        answer = "I'm sorry, but I'm currently unable to process your request. Please try again later."
+        print('excep',e)
+
+    return answer
+
 ######
 
 

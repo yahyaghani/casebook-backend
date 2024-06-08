@@ -15,7 +15,7 @@ import spacy
 
 
 from src.db.main_model import *  # Adjust import according to your project structure
-
+from src.openai_funcs import write_summary,make_summary_json
 nlp = spacy.load("en_blackstone_proto")
 
 def ensure_directory_exists(path):
@@ -41,13 +41,23 @@ def get_top_cat(doc):
 sample_accordion_data={
     "sections": [
       {
-        "clause": "Section 1",
-        "text": "This is the content of section 1."
+        "clause": "Case Summary",
+        "text": "This is the Summary of this case"
       },
       {
-        "clause": "Section 2",
-        "text": "This is the content of section 2."
+        "clause": "Issues",
+        "text": "These are the Legal Issues in this judgement...."
+      },
+      {
+        "clause": "Legal Tests",
+        "text": "These are the Legal Tests ascribed in this judgement...."
+      },
+      {
+        "clause": "Appeal",
+        "text": "These are the considerations for us to write an Appeal."
       }
+
+
     ]
   }
   
@@ -230,11 +240,16 @@ def process_pdf(userPublicId, filename):
 
     newFile = {}
     graphData = {}
+    summary_text=write_summary(full_text)
+    get_sections=make_summary_json(summary_text,sample_accordion_data)
+    sections_dict = json.loads(get_sections)
+    sections_data = sections_dict['sections']
+
     if os.path.isdir(graphDir) == False:
         print("doesnt exist")
         os.makedirs(graphDir, exist_ok=True)
     if filename in proccessed_data:
-        newFile = {"highlights": proccessed_data[filename], "name": filename, "entities": entities, "sections": sample_accordion_data['sections']}
+        newFile = {"highlights": proccessed_data[filename], "name": filename, "entities": entities, "sections": sections_data}
         print('THE NO. OF LABELS IN THIS PDF', len(labels))
         print('THE NO. OF ENTITIES IN THIS PDF', len(entities))
         print('entities before graph call',entities)

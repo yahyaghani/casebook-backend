@@ -4,19 +4,16 @@ import os
 from os import listdir
 from os.path import isfile, join, dirname
 from time import time
-from flask import g, Flask, request, jsonify, make_response, url_for, flash, send_file, abort
+from flask import g, Flask, request, jsonify, make_response, send_file
 from werkzeug.security import check_password_hash
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.utils import secure_filename
 from src.routes.pdf_api import bp_api
-from flask_migrate import Migrate
 from engineio.payload import Payload
 from flask_cors import CORS, cross_origin
 from flask import session
 
 from datetime import timedelta, datetime
-import pandas as pd
-import numpy as np
 import re
 import uuid
 import jwt
@@ -34,10 +31,9 @@ from pdfminer.converter import PDFPageAggregator
 from src.db.main_model import *
 from src.openai_funcs import * 
 from src.entity_parse import *
-from src.core.prompts.search_prompt import search_sample
 from src.core.agents.open_agent import process_user_instruction
 from src.textAnonymizer import text_anonymizer
-from src.utils import check_password_and_generate_hash, check_password
+from src.utils import check_password_and_generate_hash
 from src.socketio_instance import socketio_instance  # Import from the new module
 from src.core.multi_mode.video_pipe import *
 
