@@ -63,8 +63,10 @@ ALLOWED_EXTENSIONS = {
 
 
 app = Flask(__name__)
-app.config['CORS_HEADERS'] = 'Content-Type'
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+# app.config['CORS_HEADERS'] = 'Content-Type'
+# cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+# cors = CORS(app, resources={r"/*": {"origins": "https://app.casebk.com"}})
+CORS(app)
 
 UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static/uploads')
 STATIC_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static')
@@ -123,7 +125,8 @@ def token_required(f):
 
 # all the app configurations above
 @app.route('/api/user/register', methods=['POST'])
-@cross_origin(origin="localhost", headers=['Content-Type', 'application/json'])
+# @cross_origin(origin="localhost", headers=['Content-Type', 'application/json'])
+@cross_origin()
 def register_user():
     temp_data = request.data
     data = json.loads(temp_data)
@@ -154,7 +157,8 @@ def register_user():
 
 
 @app.route('/api/user/login', methods=['POST'])
-@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
+# @cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
+@cross_origin()
 def login_user():
     try:
         print(request.data)
@@ -166,7 +170,7 @@ def login_user():
         user = UserModel.query.filter_by(username=auth['username']).first()
         print(user)
 
-        if not user:
+        if not user: 
             return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
 
         if check_password_hash(user.password, auth['password']):
