@@ -59,7 +59,7 @@ def query_embeddings(query_text, target_label, n_results=2):
     return matched_entities
 
 # Example query
-query_text = "Caselaw for Freedom of Speech Extradition Cases"
+query_text = "Caselaw for Freedom of Speech Extradition Political Cases"
 target_label = "CITATION"
 results = query_embeddings(query_text, target_label, n_results=2)
 print("Query results:", results)

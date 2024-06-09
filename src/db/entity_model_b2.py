@@ -80,7 +80,7 @@ def store_embeddings_in_chromadb(filtered_entities_df, valid_ids):
     filtered_texts_df = texts_df[texts_df['global_id'].isin(valid_ids)]
 
     # Further filter to include only the first 10 unique global_ids
-    first_10_global_ids = filtered_texts_df['global_id'].unique()[:10]
+    first_10_global_ids = filtered_texts_df['global_id'].unique()
     filtered_texts_df = filtered_texts_df[filtered_texts_df['global_id'].isin(first_10_global_ids)]
 
     for index, row in filtered_texts_df.iterrows():
@@ -120,7 +120,7 @@ def query_embeddings(query_text, target_label):
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=3,
-        include=["documents", "metadatas"]
+        include=[ "metadatas"]
     )
 
     matched_entities = []
@@ -143,7 +143,7 @@ filtered_entities_df, valid_ids = filter_entities_with_casename_citation_provisi
 store_embeddings_in_chromadb(filtered_entities_df, valid_ids)
 
 # Example query
-query_text = "Supreme Court decision in 2009"
+query_text = "Caselaw for Freedom of Speech Extradition Political Cases"
 target_label = "CASENAME"
 results = query_embeddings(query_text, target_label)
 print("Query results:", results)
