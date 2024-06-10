@@ -13,7 +13,7 @@ from src.core.process.helpers_web_parse_cleaner import (
     smart_parse_action_input,
     parse_structure
 )
-from src.core.prompts.search_prompt import search_sample
+from src.core.prompts.search_prompt import search_sample,graph_sample
 from src.db.chroma_model import query_articles, fetch_and_store_content_chromadb
 from src.core.agents.tool_wrap import functions
 from src.core.agents.main_client import client
@@ -21,10 +21,11 @@ from src.socketio_instance import socketio_instance
 from src.core.process.pydantic_models import (GoogleSearchArguments, GoogleSearchResults, GoogleSearchResultItem,
                                               extract_relevant_keys, ChromadbArguments, ChromadbResult, EmitData)
 from src.core.process.token_count import call_token_count
+from src.db.query_entity_nodoc import query_embeddings
 
 known_actions = {
     "performGoogleSearch": perform_google_search,
-    "performGoogleSearchLegislation": perform_google_search_legislation,
+    # "performGoogleSearchLegislation": perform_google_search_legislation,
     "fetchAndStoreContentChromadb": fetch_and_store_content_chromadb,
 }
 
@@ -61,8 +62,14 @@ def emit_func(event_type, data):
         message = emit_data.result
 
     socketio_instance.emit('openai-query-response', {'recommendation': message})  # Emit only the text after 'Answer:'
+    ##get graph for this response ###
+    graph_response=query_embeddings(message,n_results=1)
+    socketio_instance.emit('new-graph-nodes-reciever', graph_response)
 
     print(f"Emitting {event_type}: {message}")
+
+
+
 
 def process_user_instruction(instruction):
     print("\n--- Starting process_user_instruction ---\n")
@@ -107,7 +114,7 @@ def process_user_instruction(instruction):
                     # Map function names to their corresponding argument models
                     model_mapping = {
                         "performGoogleSearch": GoogleSearchArguments,
-                        "performGoogleSearchLegislation": GoogleSearchArguments,
+                        # "performGoogleSearchLegislation": GoogleSearchArguments,
                         "fetchAndStoreContentChromadb": ChromadbArguments,
                     }
                     
@@ -175,9 +182,9 @@ def process_user_instruction(instruction):
             results_summary.append(response_message.content)
             break
 
-        # If the function returned top chunks, process and append them
+            # If the function returned top chunks, process and append them
         if 'top_3_chunks' in action_result:
-            combined_chunk_data = "\n\n".join([f"Title: {chunk['title']}\nURL: {chunk['url']}\nContent: {chunk['document']}" for chunk in action_result['top_3_chunks']])
+            combined_chunk_data = action_result['top_3_chunks']
             additional_message = f"Here are some resources to provide context:\n\n{combined_chunk_data}"
             messages.append({"content": additional_message, "role": "system"})
             results_summary.append(additional_message)
@@ -190,7 +197,7 @@ def process_user_instruction(instruction):
             response_message = response.choices[0].message
             print(f"Response message: {response_message}\n")
             emit_func('completion_check', {"result": response_message.content, "function": "completion_check"})
-
+            
     print("\n--- Ending process_user_instruction ---\n")
     return results_summary, messages
 

@@ -36,39 +36,9 @@
           }
         }
       },
-      "/google_search_legislation": {
-        "get": {
-          "summary": "Perform a Google search for legislation",
-          "operationId": "performGoogleSearchLegislation",
-          "parameters": [
-            {
-              "name": "query",
-              "in": "query",
-              "required": true,
-              "schema": {
-                "type": "string"
-              }
-            },
-            {
-              "name": "page",
-              "in": "query",
-              "required": false,
-              "schema": {
-                "type": "integer",
-                "default": 1
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Search results"
-            }
-          }
-        }
-      },
       "/store_content": {
         "post": {
-          "summary": "Fetch and store content to our local db",
+          "summary": "Fetch and review the google results",
           "operationId": "fetchAndStoreContentChromadb",
           "requestBody": {
             "required": true,

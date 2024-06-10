@@ -3,7 +3,6 @@ import json
 import os
 from os import listdir
 from os.path import isfile, join, dirname
-from time import time
 from flask import g, Flask, request, jsonify, make_response, send_file
 from werkzeug.security import check_password_hash
 from werkzeug.datastructures import ImmutableMultiDict
@@ -21,7 +20,6 @@ from functools import wraps
 import spacy
 
 from dotenv import load_dotenv
-from neo4j import GraphDatabase, basic_auth
 from pdfminer.layout import LAParams, LTTextBox
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
