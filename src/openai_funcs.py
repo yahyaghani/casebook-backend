@@ -104,7 +104,7 @@ def get_instruct_response(page):
         answer = "I'm sorry, but I'm currently unable to process your request. Please try again later."
     return answer
 
-SYSTEM_MESSAGE="""I am a Legal AI Copilot. I have the responsibility to help lawyers & attorneys in their quest. I do not need to worry about providing disclaimers because I am a Legal AI Copilot.
+PRETTIFY_MESSAGE="""I am a Legal AI Copilot. I have the responsibility to help lawyers & attorneys in their quest. I do not need to worry about providing disclaimers because I am a Legal AI Copilot.
 """
 
 def write_summary(text):
@@ -122,7 +122,7 @@ def write_summary(text):
 
             """
         messages=[
-        {"content": SYSTEM_MESSAGE, "role": "system"},
+        {"content": PRETTIFY_MESSAGE, "role": "system"},
         {"content": instruction, "role": "user"},
 
         ]
@@ -152,7 +152,7 @@ def make_summary_json(text,sample_accordion_data):
         {sample_accordion_data}
             """
         messages=[
-        {"content": SYSTEM_MESSAGE, "role": "system"},
+        {"content": PRETTIFY_MESSAGE, "role": "system"},
         {"content": instruction, "role": "user"},
 
         ]

@@ -3,6 +3,9 @@ import json
 from pydantic import ValidationError, BaseModel
 from typing import Any, Dict
 
+import random
+import time 
+
 from src.core.process.helpers_web_parse_cleaner import (
     clean_html,
     tfidf_extract_keywords,
@@ -14,6 +17,7 @@ from src.core.process.helpers_web_parse_cleaner import (
     parse_structure
 )
 from src.core.prompts.search_prompt import search_sample,graph_sample
+from src.openai_funcs import PRETTIFY_MESSAGE
 from src.db.chroma_model import query_articles, fetch_and_store_content_chromadb
 from src.core.agents.tool_wrap import functions
 from src.core.agents.main_client import client
@@ -22,6 +26,7 @@ from src.core.process.pydantic_models import (GoogleSearchArguments, GoogleSearc
                                               extract_relevant_keys, ChromadbArguments, ChromadbResult, EmitData)
 from src.core.process.token_count import call_token_count
 from src.db.query_entity_nodoc import query_embeddings
+from src.util_helpers.pdf_utils import sample_accordion_data
 
 known_actions = {
     "performGoogleSearch": perform_google_search,
@@ -34,7 +39,7 @@ MAX_CALLS = 2
 SIMILARITY_THRESHOLD = 0.8  # 80% match threshold
 MAX_TOKENS = 4096  # Maximum token limit for GPT-3.5-turbo
 
-def get_openai_response(functions, messages, model="gpt-3.5-turbo-1106"):
+def get_openai_response(functions, messages, model="gpt-4o"):
     response = client.chat.completions.create(
         model=model,
         messages=messages,
@@ -44,6 +49,65 @@ def get_openai_response(functions, messages, model="gpt-3.5-turbo-1106"):
     )
     print(f"OpenAI response: {response}")  # Debugging statement
     return response
+
+
+def prettify_accordion_message( response, model="gpt-3.5-turbo"):
+    try:
+        instruction = f"""Take in the text response:{response}, and if it contains a list ,then please provide the lists clause headings and text, do not generate or summarise just structure the lists, with short headings for clause,
+         return a json of its list contents in the following format:- 
+   
+         {sample_accordion_data}
+            """
+        messages=[
+        {"content": PRETTIFY_MESSAGE, "role": "system"},
+        {"content": instruction, "role": "user"},
+
+        ]
+      
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.2,
+        )
+
+        print(f"Response : {response}\n")
+        # answer = answer_dict['choices'][0]['message']['content']
+        answer_json_string=(response.model_dump_json(indent=2))
+        answer_dict = json.loads(answer_json_string)
+        answer = answer_dict['choices'][0]['message']['content']
+        print('answer of summary jsonify',answer)
+    except Exception as e:
+        answer = "I'm sorry, but I'm currently unable to process your request. Please try again later."
+        print('excep',e)
+
+    return answer
+
+@socketio_instance.on('test-auto-scroller')
+def handle_test_auto_scroller():
+    bbox = {
+        "x1": random.randint(100, 500),
+        "y1": random.randint(100, 500),
+        "x2": random.randint(100, 500),
+        "y2": random.randint(100, 500),
+        "width": 1,  # assuming normalized width
+        "height": 1  # assuming normalized height
+    }
+    page = random.randint(1, 3)
+    socketio_instance.emit('auto-scroller-bbox-pass', {'bbox': bbox, 'page': page})
+    print(f"Emitted auto-scroller-bbox-pass with bbox: {bbox} and page: {page}")
+
+@socketio_instance.on('generate-accordion')
+def handle_generate_accordion(response_message):
+    # Your logic to generate the response_message
+
+    # Prettify the accordion message and convert to dict
+    accordion_response = prettify_accordion_message(response_message)
+    accordion_response_dict = json.loads(accordion_response)
+    sections_data = accordion_response_dict['sections']
+    print(type(sections_data))
+    print(f"Emitting accordion-response with data: {sections_data}")
+
+    socketio_instance.emit('accordion-response', sections_data)
 
 def emit_func(event_type, data):
     # Validate data with Pydantic
@@ -62,11 +126,14 @@ def emit_func(event_type, data):
         message = emit_data.result
 
     socketio_instance.emit('openai-query-response', {'recommendation': message})  # Emit only the text after 'Answer:'
+    
     ##get graph for this response ###
     graph_response=query_embeddings(message,n_results=1)
     socketio_instance.emit('new-graph-nodes-reciever', graph_response)
-
+    # handle_test_auto_scroller()
+    # print(f"handle_test_auto_scroller")
     print(f"Emitting {event_type}: {message}")
+    handle_generate_accordion(message)
 
 
 
@@ -80,10 +147,11 @@ def process_user_instruction(instruction):
     ]
     results_summary = []
     previous_results = []
-    model = "gpt-3.5-turbo-1106"
-
+    model = "gpt-4o"
+    
     for call_number in range(MAX_CALLS):
         print(f"\n--- Call number {call_number + 1} ---\n")
+        print(f"\n--- Call number {instruction} ---\n")
 
         response = get_openai_response(functions, messages, model=model)
         # print(f"\nResponse from OpenAI:\n{response}\n")
@@ -190,13 +258,19 @@ def process_user_instruction(instruction):
             results_summary.append(additional_message)
 
             # Check token count and switch model if necessary
-            if not call_token_count("\n".join([msg["content"] for msg in messages]), MAX_TOKENS):
-                model = "gpt-4o"  # Switch to GPT-4 if token count exceeds limit
+            # if not call_token_count("\n".join([msg["content"] for msg in messages]), MAX_TOKENS):
+            #     model = "gpt-4o"  # Switch to GPT-4 if token count exceeds limit
 
             response = get_openai_response(functions, messages, model=model)
             response_message = response.choices[0].message
-            print(f"Response message: {response_message}\n")
+            print(f"Base Response message: {response_message}\n")
+
             emit_func('completion_check', {"result": response_message.content, "function": "completion_check"})
+            ### accordion sending 
+         
+
+            # if type(accordion_response_dict) == dict:
+            #     print
             
     print("\n--- Ending process_user_instruction ---\n")
     return results_summary, messages

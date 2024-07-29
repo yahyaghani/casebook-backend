@@ -16,6 +16,7 @@ from datetime import timedelta, datetime
 import re
 import uuid
 import jwt
+from jwt import DecodeError
 from functools import wraps
 import spacy
 
@@ -34,6 +35,7 @@ from src.textAnonymizer import text_anonymizer
 from src.utils import check_password_and_generate_hash
 from src.socketio_instance import socketio_instance  # Import from the new module
 from src.core.multi_mode.video_pipe import *
+from src.core.process.helpers_web_parse_cleaner import googlesearch_citation_node
 
 dotenv_path = join(dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
@@ -107,7 +109,8 @@ def token_required(f):
         if not token:
             return jsonify({'message': 'Token required'})
         try:
-            data = jwt.decode(token, app.config['SECRET_KEY'])
+            # data = jwt.decode(token, app.config['SECRET_KEY'])
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
             currentuser = UserModel.query.filter_by(
                 public_id=data['public_id']).first()
         except:
@@ -168,14 +171,18 @@ def login_user():
             return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
 
         if check_password_hash(user.password, auth['password']):
-            token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
-            ) + timedelta(hours=24)}, app.config['SECRET_KEY'])
+            # token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
+            # ) + timedelta(hours=24)}, app.config['SECRET_KEY'])
+            token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow() + timedelta(hours=24)}, app.config['SECRET_KEY'])
 
-            return jsonify({'auth_token': token.decode('UTF-8'), 'userId': user.id, 'userPublicId': user.public_id,
+            return jsonify({'auth_token': token, 'userId': user.id, 'userPublicId': user.public_id,
                             'username': user.username, 'email': user.email,
                             'city': user.city, 'country': user.country,
                             'fname': user.fname, 'lname': user.lname,
                             'organisation': user.organisation})
+
+        
+
     except Exception as err:
         print('An exception occured!!')
         print(err)
@@ -198,6 +205,7 @@ def get_user_cases(currentuser):
     case_list = [{'id': case.id, 'description': case.case_description} for case in cases]
 
     return jsonify(case_list), 200
+
 
 
 @app.route('/upload/multiple-files', methods=['POST'])
@@ -878,7 +886,40 @@ def get_user_pdf2(userPublicId, filename,inbound=False):
     return response
 
 
+### node search
+
+# # Dummy data for testing
+# node_data = {
+#     'node1': 'http://example.com/page1',
+#     'node2': 'http://example.com/page2',
+#     'node3': 'http://example.com/page3'
+# }
+
+@app.route('/get-node-url', methods=['POST'])
+@token_required
+def get_node_url(currentuser):
+    try:
+        data = request.get_json()
+        node_id = data.get('nodeId')
+
+        if not node_id:
+            return jsonify({'message': 'Node ID is missing'}), 400
+
+        url = googlesearch_citation_node(node_id)
+
+        if url:
+            return jsonify({'url': url}), 200
+        else:
+            return jsonify({'message': 'URL not found for the given Node ID'}), 404
+
+    except Exception as err:
+        print('An exception occurred!!')
+        print(err)
+        return make_response('Something went wrong!!', 500)
+
+
 ###socket calls for dynamic content###
+
 
 @socketio_instance.on('openai_appeal_call')
 def handle_openai_call(data):
@@ -940,7 +981,7 @@ def handle_openai_call_query(data):
 
     # print('openai-query-response',response)
     emit('openai-query-response', {'recommendation': response})
-
+   
 
 @socketio_instance.on('openai-get-recommendation')
 def handle_openai_call_rec(data):
@@ -1081,7 +1122,7 @@ def handle_openai_chat(data):
                 parsed_contents.append(parsed_text)
         else:
             print(f"\nFile not found: {filepath}\n")
-
+    
     combined_content = "\n\n".join(parsed_contents)
     combined_input = f"{question}\n\nAdditional context from provided documents:\n{combined_content}"
     
