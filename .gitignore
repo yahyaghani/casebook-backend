@@ -16,6 +16,6 @@ pyvenv.cfg
 venv/
 spacy_models/*.csv
 spacy_models/categorization_output.csv
-src/db/chromadb_data/chroma.sqlite3
-src/db/chromadb_data/
-src/db
+# src/db/chromadb_data/chroma.sqlite3
+# src/db/chromadb_data/
+# src/db
