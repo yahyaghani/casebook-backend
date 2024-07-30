@@ -1,2 +1,2 @@
-src/db/chromadb_data/*.bin filter=lfs diff=lfs merge=lfs -text
-src/db/chromadb_data/chroma.sqlite3 filter=lfs diff=lfs merge=lfs -text
+#src/db/chromadb_data/*.bin filter=lfs diff=lfs merge=lfs -text
+#src/db/chromadb_data/chroma.sqlite3 filter=lfs diff=lfs merge=lfs -text
