@@ -64,27 +64,29 @@ def fetch_and_store_content_chromadb(arguments: ChromadbArguments, instruction: 
 
         content_type = response.headers.get('Content-Type')
         cleaned_text = extract_text_from_pdf(response.content) if 'application/pdf' in content_type else extract_text_from_html(response.text)
-        chunks = split_into_chunks(cleaned_text)
-        embeddings = [get_embedding(chunk) for chunk in chunks]
+        # chunks = split_into_chunks(cleaned_text)
+        # embeddings = [get_embedding(chunk) for chunk in chunks]
 
-        # Set to store unique chunk IDs
-        processed_chunks = set()
+        # # Set to store unique chunk IDs
+        # processed_chunks = set()
 
-        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-            doc_id = f"{title.replace(' ', '_')}_{url}_chunk_{i+1}"
+        # for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+        #     doc_id = f"{title.replace(' ', '_')}_{url}_chunk_{i+1}"
 
-            if doc_id not in processed_chunks:
-                collection.add(
-                    documents=[chunk],
-                    metadatas=[{"title": title, "url": url, "chunk": i+1, "total_chunks": len(chunks)}],
-                    ids=[doc_id],
-                    embeddings=[embedding]
-                )
-                processed_chunks.add(doc_id)
+        #     if doc_id not in processed_chunks:
+        #         collection.add(
+        #             documents=[chunk],
+        #             metadatas=[{"title": title, "url": url, "chunk": i+1, "total_chunks": len(chunks)}],
+        #             ids=[doc_id],
+        #             embeddings=[embedding]
+        #         )
+        #         processed_chunks.add(doc_id)
 
-        # After storing, query for the top 3 chunks based on the instruction
-        top_3_chunks = query_articles(instruction)
-        return {"message": "Content fetched and stored successfully, fetched top 3 closest chunks.", "top_3_chunks": top_3_chunks}
+        # # After storing, query for the top 3 chunks based on the instruction
+        # top_3_chunks = query_articles(instruction)
+        # return {"message": "Content fetched and stored successfully, fetched top 3 closest chunks.", "top_3_chunks": top_3_chunks}
+        return {"message": "Content fetched and stored successfully, fetched top chunk.", "top_3_chunks": cleaned_text}
+
     except Exception as e:
         raise ValueError(f"Error processing content: {e}")
 

@@ -6,7 +6,7 @@ import requests
 import sqlite3
 import re
 import json 
-
+from typing import Optional
 
 from src.core.process.instructional_parsers import openai_structured_response_return_title_url
 from pdfminer.high_level import extract_text
@@ -181,6 +181,26 @@ def perform_google_search_legislation(arguments: GoogleSearchArguments) -> Googl
         results.append(result_dict)
 
     return GoogleSearchResults(results=results)
+
+def googlesearch_citation_node(nodeId: str) -> Optional[str]:
+
+    try:
+        # Prepare search arguments
+        search_args = GoogleSearchArguments(query=nodeId, page=1)
+        
+        # Perform Google search
+        search_results = perform_google_search(search_args)
+        
+        if search_results.results:
+            # Return the URL of the top result
+            return search_results.results[0].url
+        else:
+            return None
+    except Exception as e:
+        print(f"An error occurred during Google search: {str(e)}")
+        return None
+
+
 
 def extract_text_from_html(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
