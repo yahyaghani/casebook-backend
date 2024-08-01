@@ -39,3 +39,12 @@ def call_token_count(text, max_tokens):
     
     # Check if the number of tokens is within the allowable limit
     return num_tokens <= max_tokens
+
+def shrink_text_to_token_limit(text, max_tokens, model_name="gpt-3.5-turbo-1106"):
+    """ Shrinks the text to fit within the max token limit for a given model. """
+    encoding = get_encoding_for_model(model_name)
+    tokens = encoding.encode(text)
+    if len(tokens) <= max_tokens:
+        return text
+    truncated_tokens = tokens[:max_tokens]
+    return encoding.decode(truncated_tokens)

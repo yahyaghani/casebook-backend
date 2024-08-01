@@ -193,6 +193,8 @@ def json_data():
             }
         ]
         };
+
+
 def graph_structure():
     return {
     "nodes": [
@@ -211,6 +213,7 @@ def graph_structure():
   }
 
 {"graph_nodes": ["SUPREME COURT", "PRESENT:", "Mr. Justice Maqbool Baqar", "Mr. Justice Qazi Muhammad Amin Ahmed", "Versus", "Qazi  Muhammad  Amin  Ahmed", "Civil Petition No.2732-L of 2016", "2", "High  Court  ", "section  122(5)  of  ", "M/s  Shujabad  Oil  Mills  Pvt.  Ltd.  The  ", "High Court", "M/s Shujabaad", "Civil Petition No.2732-L of 2016", "section  39  of  the  Ordinance  along  ", "High  Court  "], "labels": ["COURT", "CITATION", "JUDGE", "JUDGE", "CASENAME", "JUDGE", "CITATION", "CITATION", "COURT", "PROVISION", "CASENAME", "COURT", "CASENAME", "CITATION", "PROVISION", "COURT"]}
+
 def graph_data(search_query):
     r= requests.get(f"https://api.pakcaselaw.com/v1/cases/?page_size=20&search={search_query}")
     results = r.json()["results"]

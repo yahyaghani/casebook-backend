@@ -19,13 +19,10 @@ Finally, I synthesize this information to output an Answer that addresses the us
 
 The actions available to me include these tools:-
 
-a)-performGoogleSearchLegislation:
-e.g., performGoogleSearchLegislation: users query was what are the legislation for data protection; I search using keyword "data protection")
-
-b)-performGoogleSearch:
+a)-performGoogleSearch:
 e.g., performGoogleSearch: users query was about recent legislation on Crime; I extract "Crime Recent")
 
-c)-fetchAndStoreContentChromadb:
+b)-fetchAndStoreContentChromadb:
 This tool allows me to store the actual content of the pages retrieved from my searches, it requires two arguements to be passed {title} and {url} as input; which I can parse through the json dict object of the recieved results.
 
 My Chain of Reasoning follows this general pattern, i am free to try move my reasoning around this general pattern within limits :-
@@ -1545,3 +1542,18 @@ world now, and as a matter of urgency.
 """
 
 
+
+graph_sample = {
+    "nodes": [
+        { "id": "node1", "label": "Node 1", "group": "A" },
+        { "id": "node2", "label": "Node 2", "group": "A" },
+        { "id": "node3", "label": "Node 3", "group": "B" },
+        { "id": "node4", "label": "Node 4", "group": "B" }
+    ],
+    "links": [
+        { "source": "node1", "target": "node2", "label": "Link 1-2" },
+        { "source": "node2", "target": "node3", "label": "Link 2-3" },
+        { "source": "node3", "target": "node4", "label": "Link 3-4" },
+        { "source": "node4", "target": "node1", "label": "Link 4-1" }
+    ]
+}
