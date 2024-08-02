@@ -63,8 +63,10 @@ ALLOWED_EXTENSIONS = {
 
 
 app = Flask(__name__)
-app.config['CORS_HEADERS'] = 'Content-Type'
-cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+# app.config['CORS_HEADERS'] = 'Content-Type'
+# cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+# cors = CORS(app, resources={r"/*": {"origins": "https://app.casebk.com"}})
+CORS(app)
 
 UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static/uploads')
 STATIC_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static')
@@ -114,7 +116,9 @@ def token_required(f):
             currentuser = UserModel.query.filter_by(
                 public_id=data['public_id']).first()
         except:
-            print(jwt.decode(token, app.config['SECRET_KEY']))
+            print(jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"]))
+
+
             return jsonify({'message': 'Token is invalid'}), 401
 
         return f(currentuser, *args, **kwargs)
@@ -124,7 +128,8 @@ def token_required(f):
 
 # all the app configurations above
 @app.route('/api/user/register', methods=['POST'])
-@cross_origin(origin="localhost", headers=['Content-Type', 'application/json'])
+# @cross_origin(origin="localhost", headers=['Content-Type', 'application/json'])
+@cross_origin()
 def register_user():
     temp_data = request.data
     data = json.loads(temp_data)
@@ -155,40 +160,40 @@ def register_user():
 
 
 @app.route('/api/user/login', methods=['POST'])
-@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
+@cross_origin()
 def login_user():
     try:
-        print(request.data)
-        auth = request.data
-        auth = json.loads(auth)
-        print(auth)
+        auth = request.get_json()
         if not auth or not auth['username'] or not auth['password']:
-            return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
+            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required"'})
+
         user = UserModel.query.filter_by(username=auth['username']).first()
-        print(user)
+        if not user or not check_password_hash(user.password, auth['password']):
+            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required"'})
 
-        if not user:
-            return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
+        token = jwt.encode({
+            'public_id': user.public_id,
+            'exp': datetime.utcnow() + timedelta(hours=24)
+        }, app.config['SECRET_KEY']).decode('UTF-8')
 
-        if check_password_hash(user.password, auth['password']):
-            # token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow(
-            # ) + timedelta(hours=24)}, app.config['SECRET_KEY'])
-            token = jwt.encode({'public_id': user.public_id, 'exp': datetime.utcnow() + timedelta(hours=24)}, app.config['SECRET_KEY'])
+        return jsonify({
+            'auth_token': token,
+            'userId': user.id,
+            'userPublicId': user.public_id,
+            'username': user.username,
+            'email': user.email,
+            'city': user.city,
+            'country': user.country,
+            'fname': user.fname,
+            'lname': user.lname,
+            'organisation': user.organisation
+        })
 
-            return jsonify({'auth_token': token, 'userId': user.id, 'userPublicId': user.public_id,
-                            'username': user.username, 'email': user.email,
-                            'city': user.city, 'country': user.country,
-                            'fname': user.fname, 'lname': user.lname,
-                            'organisation': user.organisation})
+    except Exception as e:
+        print('An exception occurred:', e)
+        return make_response('Something went wrong', 500)
 
-        
-
-    except Exception as err:
-        print('An exception occured!!')
-        print(err)
-        return make_response('Something went wrong!!', 500)
-
-    return make_response('Couldnt verify', 401, {'WWW-Authenticate': 'Basic relam =  "Login required!"'})
+    return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required"'})
 
 
 def allowed_file(filename):
