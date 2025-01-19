@@ -32,7 +32,7 @@ def openai_structured_response_return_title_url(parsing_string):
     """
 
     response = client.completions.create(
-        model="gpt-3.5-turbo-instruct",
+        model="gpt-4o-mini",
         prompt=prompt,
         max_tokens=1350,
         n=1,

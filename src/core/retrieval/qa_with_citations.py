@@ -2,11 +2,13 @@ import os
 from langchain.chains import create_citation_fuzzy_match_chain
 from langchain_openai import ChatOpenAI
 import json 
+from dotenv import load_dotenv
 
 # Setup the Language Model with OpenAI
 def setup_language_model():
-    openai_api_key = os.getenv("OPENAI_API_KEY", "")
-    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-1106", openai_api_key=openai_api_key)
+    # openai_api_key = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    llm = ChatOpenAI(temperature=0, model="gpt-4o-mini", openai_api_key=OPENAI_API_KEY)
     return llm
 
 # Create a chain for citation fuzzy match

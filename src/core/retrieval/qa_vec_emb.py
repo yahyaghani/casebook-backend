@@ -58,7 +58,7 @@ embeddings = OpenAIEmbeddings(api_key=api_key)
 docsearch = Chroma.from_documents(texts, embeddings)
 
 # Setup the Question Answering Chain
-llm = ChatOpenAI(api_key=api_key, model="gpt-3.5-turbo-1106")
+llm = ChatOpenAI(api_key=api_key, model="gpt-4o-mini")
 qa_chain = create_qa_with_sources_chain(llm)
 doc_prompt = PromptTemplate(
     template="Content: {page_content}\nSource: {source}",
