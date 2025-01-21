@@ -101,25 +101,31 @@ def close_db(error):
     if hasattr(g, 'neo4j_db'):
         g.neo4j_db.close()
 
-
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = None
-        if 'x-access-token' in request.headers:
-            token = request.headers['x-access-token']
+        token = request.headers.get('x-access-token')
+        print(f"Received Token: {token}")  # Log received token
         if not token:
-            return jsonify({'message': 'Token required'})
+            print('message Token is missing')
+            return jsonify({'message': 'Token is missing'}), 401
+
+        if token.count('.') != 2:
+            print('message Token format is invalid')
+            return jsonify({'message': 'Token format is invalid'}), 401
+
         try:
-            # data = jwt.decode(token, app.config['SECRET_KEY'])
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            currentuser = UserModel.query.filter_by(
-                public_id=data['public_id']).first()
-        except:
-            print(jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"]))
+            print(f"Decoded Token Data: {data}")  # Log decoded data
+            currentuser = UserModel.query.filter_by(public_id=data['public_id']).first()
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired'}), 401
 
-
+        except jwt.InvalidTokenError:
             return jsonify({'message': 'Token is invalid'}), 401
+        except Exception as e:
+            print(f"Token decoding error: {e}")
+            return jsonify({'message': 'Token decoding error'}), 401
 
         return f(currentuser, *args, **kwargs)
 
@@ -686,7 +692,7 @@ def get_user_pdf2(userPublicId, filename,inbound=False):
     isHighlightsAvailable = False
     data = {}
     if os.path.isfile(filepath):
-        print("\nFile exists\n")
+        print("\nFile exists\n at get_user_pdf2")
         with open(filepath, 'r') as json_file:
             data = json.load(json_file)
             if data['name'] == filename:
@@ -942,7 +948,7 @@ def handle_openai_call(data):
     if filename:
         filepath = os.path.join(dir_path, f'{filename}.json')
         if os.path.isfile(filepath):
-                print("\nFile exists\n")
+                print("\nFile exists\n at handle_openai_call")
                 with open(filepath) as json_file:
                     data = json.load(json_file)
                     # print('data json',data)
@@ -977,7 +983,7 @@ def handle_openai_call_query(data):
     if fileName:
         filepath = os.path.join(dir_path, f'{fileName}.json')
         if os.path.isfile(filepath):
-                print("\nFile exists\n")
+                print("\nFile exists\n at handle_openai_call_query")
                 with open(filepath) as json_file:
                     data = json.load(json_file)
                     # print('data json',data)
@@ -1009,7 +1015,7 @@ def handle_openai_call_rec(data):
         if filename:
             filepath = os.path.join(dir_path, f'{filename}.json')
             if os.path.isfile(filepath):
-                    print("\nFile exists\n")
+                    print("\nFile exists\n at handle_openai_call_rec")
                     with open(filepath) as json_file:
                         data = json.load(json_file)
                         # print('data json',data)
@@ -1043,7 +1049,7 @@ def handle_openai_caselaw_call(data):
         if filename:
             filepath = os.path.join(dir_path, f'{filename}.json')
             if os.path.isfile(filepath):
-                    print("\nFile exists\n")
+                    print("\nFile exists\n at handle_openai_caselaw_call")
                     with open(filepath) as json_file:
                         data = json.load(json_file)
                         # print('data json',data)
@@ -1077,7 +1083,7 @@ def handle_openai_clause_call(data):
         if filename:
             filepath = os.path.join(dir_path, f'{filename}.json')
             if os.path.isfile(filepath):
-                    print("\nFile exists\n")
+                    print("\nFile exists\n at handle_openai_clause_call")
                     with open(filepath) as json_file:
                         data = json.load(json_file)
                         # print('data json',data)
@@ -1161,7 +1167,7 @@ def test_connect():
                 filepath = os.path.join(dir_path, f'{fileName}.json')
             
             if os.path.isfile(filepath):
-                print("\nFile exists\n")
+                print("\nFile exists\n at test_connect")
                 with open(filepath) as json_file:
                     data = json.load(json_file)
                     emit('document-loaded', data)

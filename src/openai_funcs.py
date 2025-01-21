@@ -1,13 +1,17 @@
-
 from openai import OpenAI
-
 import json
 import backoff
 import spacy
-import os 
+import os
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Get API key from environment variable
+api_key = os.getenv("OPENAI_API_KEY")
+
+client = OpenAI(api_key=api_key)
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
 def get_rec(instruction,page):
