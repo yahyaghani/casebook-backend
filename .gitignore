@@ -21,3 +21,4 @@ src/db/chromadb_data/
 src/db
 spacy_models/*.csv
 spacy_models/categorization_output.csv
+.env
