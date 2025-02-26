@@ -12,6 +12,10 @@ from engineio.payload import Payload
 from flask_cors import CORS, cross_origin
 from flask import session
 
+import logging
+from logging.handlers import RotatingFileHandler
+
+
 from datetime import timedelta, datetime
 import re
 import uuid
@@ -66,7 +70,8 @@ app = Flask(__name__)
 # app.config['CORS_HEADERS'] = 'Content-Type'
 # cors = CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 # cors = CORS(app, resources={r"/*": {"origins": "https://app.casebk.com"}})
-CORS(app)
+# CORS(app)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static/uploads')
 STATIC_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static')
@@ -95,6 +100,19 @@ init_db(app)  # Initialize the database with the app
 setup_database(app)  # Now it's safe to setup the database
 
 citation_regex = r"((?:PLD|SCMR|CLC|PCrLJ|PTD|PLC|CLD|YLR|GBLR|AIR|AC|Q\.B|PCr\.LJ|MLD|P Cr\. L J|ER|KB|Lloyd’s Rep|SCC|F\.R\.D|F\.3d)\s\d{4}\s(?:[^\d]+)?\d{1,3}|\d{4}\s(?:PLD|SCMR|CLC|PCrLJ|PTD|PLC|CLD|YLR|GBLR|AIR|AC|Q\.B|PCr\.LJ|MLD|P Cr\. L J|ER|KB|Lloyd’s Rep|SCC|F\.R\.D|F\.3d)\s(?:[^\d]+)?\d{1,4})"
+
+# Configure logging
+handler = RotatingFileHandler('/var/log/supervisor/casebook_reqs.log', maxBytes=10000, backupCount=2)
+handler.setLevel(logging.INFO)
+app.logger.addHandler(handler)
+app.logger.info('This is a test log message')  # Add this line
+
+
+@app.before_request
+def log_request_info():
+    app.logger.info('Headers: %s', request.headers)
+    app.logger.info('Body: %s', request.get_data())
+
 
 @app.teardown_appcontext
 def close_db(error):
@@ -213,6 +231,7 @@ def get_user_cases(currentuser):
     #     return jsonify({'message': 'Unauthorized access'}), 403
     
     cases = Caselog.query.filter_by(user_id=currentuser.id).all()
+    # case_list = [{'id': case.id, 'description': case.case_description , 'case_category':case.case_category} for case in cases]
     case_list = [{'id': case.id, 'description': case.case_description} for case in cases]
 
     return jsonify(case_list), 200
@@ -226,14 +245,15 @@ def upload_multiple_files(currentuser):
         print("Retrieving case name from form data...")
         case_name = request.form.get('case_name')  # Retrieve case_name from form data
         print(f"Case name received: {case_name}")
-
+        case_category = request.form.get('case_category')  # Retrieve document class from form data
+        print(f"Document Class recieved: {case_category}")
         case_id = None
         if case_name:
             print("Checking for existing case in the database...")
             existing_case = Caselog.query.filter_by(case_description=case_name, user_id=currentuser.id).first()
             if not existing_case:
                 print("No existing case found, creating a new case...")
-                new_case = Caselog(case_description=case_name, user_id=currentuser.id)
+                new_case = Caselog(case_description=case_name, user_id=currentuser.id,case_category=case_category)
                 db.session.add(new_case)
                 db.session.commit()
                 case_id = new_case.id
@@ -271,7 +291,7 @@ def upload_multiple_files(currentuser):
                 short_sum = summary[:200] if summary else "No summary available"
                 uploaded_files.append({
                     'name': filename,
-                    'category': 'Determined by file type',
+                    'category': "EMPTY",
                     'summary': short_sum,
                     'type': file_extension
                 })

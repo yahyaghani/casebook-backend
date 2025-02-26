@@ -95,7 +95,7 @@ class Caselog(db.Model):
     case_description = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
     files = db.relationship('FilePost', secondary='caselog_files', back_populates="caselogs")
-
+    case_category = db.Column(db.String(80), nullable=True)
     def __repr__(self):
         return f'<Caselog {self.id} {self.case_description}>'
     
@@ -104,7 +104,9 @@ class Caselog(db.Model):
             'id': self.id,
             'case_description': self.case_description,
             'user_id': self.user_id,
-            'files': [file.serialize() for file in self.files]
+            'files': [file.serialize() for file in self.files],
+            'case_category': self.case_category
+
         }
 
 
