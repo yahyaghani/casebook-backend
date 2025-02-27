@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.inspection import inspect
+from os.path import join
 
 db = SQLAlchemy()
 
@@ -109,6 +110,17 @@ class Caselog(db.Model):
 
         }
 
+class UploadedFiles(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    file_name = db.Column(db.String(255), nullable=False)
+    user_public_id = db.Column(db.String(50), db.ForeignKey('user_model.public_id'), nullable=False)
+    case_id = db.Column(db.Integer, db.ForeignKey('caselog.id'), nullable=True)  # Optional link to a case
+    case_name = db.Column(db.String(255), nullable=True)
+    def serialize(self):
+        return {
+            'name': self.file_name,
+            'url': join('static', 'uploads', self.user_public_id, self.file_name)
+        }
 
 # custom decorators
 

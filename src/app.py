@@ -77,6 +77,8 @@ UPLOAD_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static/uploads')
 STATIC_FOLDER = os.path.join(f'{os.path.dirname(__file__)}/static')
 
 app.config.from_pyfile('settings.py')
+app.config["DEBUG"] = True
+
 app.register_blueprint(bp_api, url_prefix="/api/v1/")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['STATIC_FOLDER'] = STATIC_FOLDER
@@ -109,9 +111,25 @@ app.logger.info('This is a test log message')  # Add this line
 
 
 @app.before_request
-def log_request_info():
-    app.logger.info('Headers: %s', request.headers)
-    app.logger.info('Body: %s', request.get_data())
+def log_request():
+    """Log incoming request details, excluding binary file data."""
+    if request.content_type and "multipart/form-data" in request.content_type:
+        print(f"📩 Incoming request to {request.path} with form-data (files not logged).")
+        print(f"Headers: {dict(request.headers)}")
+        print(f"Form Data: {request.form.to_dict()}")
+    else:
+        print(f"📩 Request to {request.path}")
+        print(f"Headers: {dict(request.headers)}")
+        print(f"Body: {request.get_data(as_text=True)}")  # Exclude binary data
+
+@app.after_request
+def log_response(response):
+    """Logs response details without breaking streamed responses."""
+    if response.direct_passthrough:
+        app.logger.info(f"📤 Response [{response.status}]: <streamed response>")
+    else:
+        app.logger.info(f"📤 Response [{response.status}]: {response.get_data(as_text=True)[:500]}")
+    return response
 
 
 @app.teardown_appcontext
@@ -238,77 +256,143 @@ def get_user_cases(currentuser):
 
 
 
+# @app.route('/upload/multiple-files', methods=['POST'])
+# @token_required
+# def upload_multiple_files(currentuser):
+#     try:
+#         print("Retrieving case name from form data...")
+#         case_name = request.form.get('case_name')  # Retrieve case_name from form data
+#         print(f"Case name received: {case_name}")
+#         case_category = request.form.get('case_category')  # Retrieve document class from form data
+#         print(f"Document Class recieved: {case_category}")
+#         case_id = None
+#         if case_name:
+#             print("Checking for existing case in the database...")
+#             existing_case = Caselog.query.filter_by(case_description=case_name, user_id=currentuser.id).first()
+#             if not existing_case:
+#                 print("No existing case found, creating a new case...")
+#                 new_case = Caselog(case_description=case_name, user_id=currentuser.id,case_category=case_category)
+#                 db.session.add(new_case)
+#                 db.session.commit()
+#                 case_id = new_case.id
+#                 print(f"New case created with ID: {case_id}")
+#             else:
+#                 case_id = existing_case.id
+#                 print(f"Existing case found with ID: {case_id}")
+
+#         print("Checking if files are included in the request...")
+#         if 'files' not in request.files:
+#             print("No file part in the request")
+#             return jsonify({'message': 'No file part in the request'}), 400
+
+#         files = request.files.getlist('files')
+#         if not files:
+#             print("No files selected for uploading")
+#             return jsonify({'message': 'No files selected for uploading'}), 400
+
+#         print(f"Creating upload directory for user {currentuser.public_id}...")
+#         upload_dir = os.path.join(os.path.dirname(__file__), 'static/uploads/', currentuser.public_id)
+#         if not os.path.exists(upload_dir):
+#             os.makedirs(upload_dir, exist_ok=True)
+#             print(f"Upload directory created at {upload_dir}")
+
+#         uploaded_files = []
+#         for file in files:
+#             if file and allowed_file(file.filename):
+#                 filename = secure_filename(file.filename)
+#                 file_path = os.path.join(upload_dir, filename)
+#                 print(f"Saving file: {filename} to {file_path}")
+#                 file.save(file_path)
+#                 file_extension = os.path.splitext(filename)[1].lower()
+#                 print(f"Processing file {filename} with extension {file_extension}")
+#                 summary = file_handler(file_path, file_extension, currentuser.public_id, filename, case_id)
+#                 short_sum = summary[:200] if summary else "No summary available"
+#                 uploaded_files.append({
+#                     'name': filename,
+#                     'category': "EMPTY",
+#                     'summary': short_sum,
+#                     'type': file_extension
+#                 })
+#                 print(f"File {filename} processed and added to the response")
+#             else:
+#                 print(f"File {file.filename} is not an allowed file type")
+#                 return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS)}'}), 400
+        
+#         print("All files successfully uploaded")
+#         return jsonify({'message': 'Files successfully uploaded', 'files': uploaded_files}), 201
+
+#     except Exception as err:
+#         print('An exception occurred!!')
+#         print(err)
+#         return make_response('Something went wrong!!', 500)
 @app.route('/upload/multiple-files', methods=['POST'])
 @token_required
 def upload_multiple_files(currentuser):
     try:
-        print("Retrieving case name from form data...")
-        case_name = request.form.get('case_name')  # Retrieve case_name from form data
-        print(f"Case name received: {case_name}")
-        case_category = request.form.get('case_category')  # Retrieve document class from form data
-        print(f"Document Class recieved: {case_category}")
+        # Retrieve form data
+        case_name = request.form.get('case_name')
+        case_category = request.form.get('case_category')
         case_id = None
+
+        # Handle case association
         if case_name:
-            print("Checking for existing case in the database...")
             existing_case = Caselog.query.filter_by(case_description=case_name, user_id=currentuser.id).first()
             if not existing_case:
-                print("No existing case found, creating a new case...")
-                new_case = Caselog(case_description=case_name, user_id=currentuser.id,case_category=case_category)
+                new_case = Caselog(case_description=case_name, user_id=currentuser.id, case_category=case_category)
                 db.session.add(new_case)
                 db.session.commit()
                 case_id = new_case.id
-                print(f"New case created with ID: {case_id}")
             else:
                 case_id = existing_case.id
-                print(f"Existing case found with ID: {case_id}")
 
-        print("Checking if files are included in the request...")
+        # Check for files in request
         if 'files' not in request.files:
-            print("No file part in the request")
             return jsonify({'message': 'No file part in the request'}), 400
 
         files = request.files.getlist('files')
-        if not files:
-            print("No files selected for uploading")
+        if not files or all(f.filename == '' for f in files):
             return jsonify({'message': 'No files selected for uploading'}), 400
 
-        print(f"Creating upload directory for user {currentuser.public_id}...")
-        upload_dir = os.path.join(os.path.dirname(__file__), 'static/uploads/', currentuser.public_id)
-        if not os.path.exists(upload_dir):
-            os.makedirs(upload_dir, exist_ok=True)
-            print(f"Upload directory created at {upload_dir}")
+        # Create user-specific upload directory
+        upload_dir = os.path.join(os.path.dirname(__file__), 'static', 'uploads', currentuser.public_id)
+        os.makedirs(upload_dir, exist_ok=True)
 
-        uploaded_files = []
+        uploaded_files_response = []
+
         for file in files:
             if file and allowed_file(file.filename):
+                # Secure filename and save file
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_dir, filename)
-                print(f"Saving file: {filename} to {file_path}")
                 file.save(file_path)
+
+                # Process file using file_handler
                 file_extension = os.path.splitext(filename)[1].lower()
-                print(f"Processing file {filename} with extension {file_extension}")
                 summary = file_handler(file_path, file_extension, currentuser.public_id, filename, case_id)
-                short_sum = summary[:200] if summary else "No summary available"
-                uploaded_files.append({
+                short_summary = summary[:200] if summary else "No summary available"
+
+                # Save file details in the database
+                uploaded_file = UploadedFiles(
+                    file_name=filename,
+                    user_public_id=currentuser.public_id,
+                    case_name=case_name
+                )
+                db.session.add(uploaded_file)
+
+                # Prepare response (separate from DB entry)
+                uploaded_files_response.append({
                     'name': filename,
                     'category': "EMPTY",
-                    'summary': short_sum,
+                    'summary': short_summary,
                     'type': file_extension
                 })
-                print(f"File {filename} processed and added to the response")
-            else:
-                print(f"File {file.filename} is not an allowed file type")
-                return jsonify({'message': f'Allowed file types are {", ".join(ALLOWED_EXTENSIONS)}'}), 400
-        
-        print("All files successfully uploaded")
-        return jsonify({'message': 'Files successfully uploaded', 'files': uploaded_files}), 201
+
+        db.session.commit()
+        return jsonify({'message': 'Files successfully uploaded', 'files': uploaded_files_response}), 201
 
     except Exception as err:
-        print('An exception occurred!!')
-        print(err)
-        return make_response('Something went wrong!!', 500)
-
-
+        app.logger.error(f"An error occurred: {err}")
+        return make_response(jsonify({'error': 'Something went wrong!!'}), 500)
 
 @app.route('/upload/file', methods=['POST'])
 @token_required
@@ -354,22 +438,45 @@ def upload_file(currentuser):
 @token_required
 def get_user_files(currentuser):
     try:
-        dir = os.path.join(os.path.dirname(__file__)+'/static'  + '/uploads/', currentuser.public_id)
-        if os.path.isdir(dir) == False:
-            print('No files found')
-            resp = jsonify({'message': 'No files available for the user'})
-            resp.status_code = 400
-            return resp
-        else:
-            userFiles = [{'name': f, 'url': join('static','uploads', currentuser.public_id, f)} for f in listdir(dir) if
-                         isfile(join(dir, f))]
-            resp = jsonify({'files': userFiles})
-            resp.status_code = 201
-            return resp
+        # Fetch file records from the database
+        files = UploadedFiles.query.filter_by(user_public_id=currentuser.public_id).all()
+
+        if not files:
+            return jsonify({'message': 'No files available for the user'}), 400
+
+        # Construct response with name and URL schema
+        user_files = []
+        for file in files:
+            file_path = os.path.join('static', 'uploads', currentuser.public_id, file.file_name)
+            user_files.append({'name': file.file_name, 'url': file_path})
+        app.logger.info(f"user_files: {user_files}")
+
+        return jsonify({'files': user_files}), 200
+
     except Exception as err:
-        print('An exception occured!!')
-        print(err)
-        return make_response('Something went wrong!!', 500)
+        app.logger.error(f"An error occurred: {err}")
+        return make_response(jsonify({'error': 'Something went wrong!!'}), 500)
+
+# @app.route('/get/files', methods=['GET'])
+# @token_required
+# def get_user_files(currentuser):
+#     try:
+#         dir = os.path.join(os.path.dirname(__file__)+'/static'  + '/uploads/', currentuser.public_id)
+#         if os.path.isdir(dir) == False:
+#             print('No files found')
+#             resp = jsonify({'message': 'No files available for the user'})
+#             resp.status_code = 400
+#             return resp
+#         else:
+#             userFiles = [{'name': f, 'url': join('static','uploads', currentuser.public_id, f)} for f in listdir(dir) if
+#                          isfile(join(dir, f))]
+#             resp = jsonify({'files': userFiles})
+#             resp.status_code = 201
+#             return resp
+#     except Exception as err:
+#         print('An exception occured!!')
+#         print(err)
+#         return make_response('Something went wrong!!', 500)
 
 
 @app.route('/file/share/<path:userPublicId>/<path:filename>', methods=['GET'])
@@ -1232,3 +1339,17 @@ def test_connect():
     
 if __name__ == '__main__':
     socketio_instance.run(app, async_mode='gevent', host='0.0.0.0', port=5000)
+
+
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers  # Attach Gunicorn handlers
+    app.logger.setLevel(logging.INFO)  # Set log level explicitly
+
+# Custom log formatter for better readability
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# Ensure stdout logs are captured properly
+stdout_handler = logging.StreamHandler()
+stdout_handler.setFormatter(formatter)
+app.logger.addHandler(stdout_handler)
